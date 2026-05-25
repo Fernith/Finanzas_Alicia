@@ -8,7 +8,7 @@ COPY finanzas-frontend/ .
 RUN npm run build
 
 # --- ETAPA 2: Compilar Rust ---
-FROM rust:1.75 AS backend-builder
+FROM rust:latest AS backend-builder
 WORKDIR /app
 # Al copiar la carpeta entera, también se copia la carpeta oculta .sqlx
 COPY finanzas-backend/ .
