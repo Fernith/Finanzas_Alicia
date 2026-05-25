@@ -1,0 +1,60 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            o.id::text as \"id!\",\n            o.fecha::text as \"fecha!\",\n            o.cantidad::float as \"cantidad!\",\n            c.nombre as \"categoria!\",\n            cu.nombre as \"cuenta!\",\n            o.descripcion,\n            o.campo_extra_ingreso\n        FROM operaciones o\n        JOIN categorias c ON o.categoria_id = c.id\n        JOIN cuentas cu ON o.cuenta_id = cu.id\n        WHERE o.tipo_operacion_id = 'INGRESO'\n          AND o.estado = true\n          AND (\n              ($3::text != '' AND (\n                  o.descripcion ILIKE '%' || $3::text || '%' OR \n                  c.nombre ILIKE '%' || $3::text || '%' OR \n                  cu.nombre ILIKE '%' || $3::text || '%' OR\n                  o.campo_extra_ingreso ILIKE '%' || $3::text || '%'\n              ))\n              OR \n              ($3::text = '' AND EXTRACT(MONTH FROM o.fecha) = $1 AND EXTRACT(YEAR FROM o.fecha) = $2)\n          )\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "fecha!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "cantidad!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "categoria!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "cuenta!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "descripcion",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "campo_extra_ingreso",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "5f80522330d4a2df16904cf1eed29a70836dfcd2fef399ffcdbd1b5a0b3d4869"
+}

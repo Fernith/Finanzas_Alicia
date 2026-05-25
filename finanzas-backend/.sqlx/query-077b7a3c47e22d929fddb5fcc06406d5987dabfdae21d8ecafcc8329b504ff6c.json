@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT c.id::text as \"id!\", c.nombre as \"nombre!\", c.color as \"color!\", c.activo as \"activo!\" \n           FROM cuentas c\n           JOIN cuentas_tipos_operacion ct ON c.id = ct.cuenta_id\n           WHERE ct.tipo_operacion_id = 'AHORRO'\n           ORDER BY c.nombre",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "color!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "activo!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "077b7a3c47e22d929fddb5fcc06406d5987dabfdae21d8ecafcc8329b504ff6c"
+}

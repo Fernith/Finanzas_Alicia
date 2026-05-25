@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            o.id::text as \"id!\", o.fecha::text as \"fecha!\", o.cantidad::float as \"cantidad!\", \n            o.categoria_id::text as \"categoria_id!\", c.nombre as \"categoria!\", c.color as \"color!\",\n            o.cuenta_id::text as \"cuenta_id!\", cu.nombre as \"cuenta!\",\n            o.notas\n        FROM operaciones o\n        JOIN categorias c ON o.categoria_id = c.id\n        JOIN cuentas cu ON o.cuenta_id = cu.id\n        WHERE o.tipo_operacion_id = 'AHORRO' AND o.estado = true\n        ORDER BY o.fecha DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "fecha!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "cantidad!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "categoria_id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "categoria!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "color!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "cuenta_id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "cuenta!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "notas",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      false,
+      true,
+      null,
+      false,
+      true
+    ]
+  },
+  "hash": "300e21fbc81619c3aabb5830b7eeef2266477b9ddf187e947c424858ccb60849"
+}

@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id::text as \"id!\", nombre, tipo_operacion_id as \"tipo_operacion_id!\", color as \"color!\", activo as \"activo!\" FROM categorias ORDER BY tipo_operacion_id DESC, nombre ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo_operacion_id!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "color!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "activo!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "866053de550cf460a8e920a2c6563f1e1d810585bd9ced38e45c77cf3313f94a"
+}
