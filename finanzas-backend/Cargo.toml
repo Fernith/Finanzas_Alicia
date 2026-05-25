@@ -1,0 +1,13 @@
+[package]
+name = "finanzas-backend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.7" # El framework web (como Express en Node)
+tokio = { version = "1.0", features = ["full"] } # Permite que Rust haga varias cosas a la vez (asincronía)
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "macros"] } # Para conectar con la BBDD
+dotenvy = "0.15" # Para leer variables de entorno
+tower-http = { version = "0.5", features = ["cors"] } # Para permitir que el frontend se comunique con el backend
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
