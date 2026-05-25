@@ -11,7 +11,7 @@ export default function ModalFinalizarMeta({ isOpen, onClose, onSuccess, meta }:
 
   useEffect(() => {
     if (isOpen) {
-      fetch('http://localhost:3000/api/ahorros/opciones-finalizar')
+      fetch('/api/ahorros/opciones-finalizar')
         .then(res => res.json()).then(data => { setOpciones(data); if (data.categorias[0]) setCategoriaId(data.categorias[0].id); if (data.cuentas[0]) setCuentaId(data.cuentas[0].id); });
       setFecha(new Date().toISOString().split('T')[0]);
     }
@@ -24,7 +24,7 @@ export default function ModalFinalizarMeta({ isOpen, onClose, onSuccess, meta }:
     setEnviando(true);
     
     try {
-      const response = await fetch(`http://localhost:3000/api/ahorros/metas/${meta.id}/finalizar`, {
+      const response = await fetch(`/api/ahorros/metas/${meta.id}/finalizar`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fecha, cuenta_id: cuentaId, categoria_id: categoriaId })
       });

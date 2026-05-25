@@ -74,8 +74,8 @@ export default function ModalAgregarGasto({ isOpen, onClose, onSuccess, categori
     try {
       // MODIFICADO: URL dinámica y método dinámico (PUT si editamos, POST si creamos)
       const url = gastoAEditar 
-        ? `http://localhost:3000/api/gastos/${gastoAEditar.id}`
-        : 'http://localhost:3000/api/gastos';
+        ? `/api/gastos/${gastoAEditar.id}`
+        : '/api/gastos';
         
       const method = gastoAEditar ? 'PUT' : 'POST';
 

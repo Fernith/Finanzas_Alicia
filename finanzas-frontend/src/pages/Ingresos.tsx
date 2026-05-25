@@ -34,12 +34,12 @@ export default function Ingresos() {
   }, [ingresos]);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/categorias/ingresos').then(res => res.json()).then(data => setCategorias(data));
-    fetch('http://localhost:3000/api/cuentas/ingresos').then(res => res.json()).then(data => setCuentas(data));
+    fetch('/api/categorias/ingresos').then(res => res.json()).then(data => setCategorias(data));
+    fetch('/api/cuentas/ingresos').then(res => res.json()).then(data => setCuentas(data));
   }, []);
 
   const cargarIngresosDelServidor = useCallback(() => {
-    fetch(`http://localhost:3000/api/ingresos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}`)
+    fetch(`/api/ingresos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}`)
       .then(res => res.json())
       .then(data => setIngresos(data))
       .catch(() => setIngresos([]));
@@ -58,7 +58,7 @@ export default function Ingresos() {
   const confirmarEliminacion = async () => {
     if (!idAEliminar) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/ingresos/${idAEliminar}`, { method: 'DELETE' });
+      const res = await fetch(`/api/ingresos/${idAEliminar}`, { method: 'DELETE' });
       if (res.ok) cargarIngresosDelServidor();
       else alert('No se pudo eliminar el ingreso.');
     } catch {

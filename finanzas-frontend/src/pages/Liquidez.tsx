@@ -11,7 +11,7 @@ export default function Liquidez() {
   const [modalHistorial, setModalHistorial] = useState<any>(null);
 
   const cargarCuentas = () => {
-    fetch('http://localhost:3000/api/liquidez/saldos')
+    fetch('/api/liquidez/saldos')
       .then(res => res.json())
       .then(data => setCuentas(data));
   };

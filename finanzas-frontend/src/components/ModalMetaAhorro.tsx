@@ -35,7 +35,7 @@ export default function ModalMetaAhorro({ isOpen, onClose, onSuccess, metaAEdita
     setEnviando(true);
 
     const payload = { nombre, objetivo: Number(objetivo), color };
-    const url = metaAEditar ? `http://localhost:3000/api/ahorros/metas/${metaAEditar.id}` : 'http://localhost:3000/api/ahorros/metas';
+    const url = metaAEditar ? `/api/ahorros/metas/${metaAEditar.id}` : '/api/ahorros/metas';
     const method = metaAEditar ? 'PUT' : 'POST';
 
     try {

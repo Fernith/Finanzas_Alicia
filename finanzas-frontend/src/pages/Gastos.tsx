@@ -35,12 +35,12 @@ export default function Gastos() {
   }, [gastos]);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/categorias/gastos').then(res => res.json()).then(data => setCategorias(data));
-    fetch('http://localhost:3000/api/cuentas/gastos').then(res => res.json()).then(data => setCuentas(data));
+    fetch('/api/categorias/gastos').then(res => res.json()).then(data => setCategorias(data));
+    fetch('/api/cuentas/gastos').then(res => res.json()).then(data => setCuentas(data));
   }, []);
 
   const cargarGastosDelServidor = useCallback(() => {
-    fetch(`http://localhost:3000/api/gastos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}`)
+    fetch(`/api/gastos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}`)
       .then(res => res.json())
       .then(data => setGastos(data))
       .catch(() => setGastos([]));
@@ -60,7 +60,7 @@ export default function Gastos() {
   const confirmarEliminacion = async () => {
     if (!idAEliminar) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/gastos/${idAEliminar}`, { method: 'DELETE' });
+      const res = await fetch(`/api/gastos/${idAEliminar}`, { method: 'DELETE' });
       if (res.ok) cargarGastosDelServidor();
       else alert('No se pudo eliminar el gasto.');
     } catch {

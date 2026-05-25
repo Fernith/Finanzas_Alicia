@@ -19,8 +19,8 @@ export default function Ajustes() {
     tipo: 'activar' | 'desactivar' 
   } | null>(null);
 
-  const cargarCategorias = () => fetch('http://localhost:3000/api/ajustes/categorias').then(res => res.json()).then(data => setCategorias(data));
-  const cargarCuentas = () => fetch('http://localhost:3000/api/ajustes/cuentas').then(res => res.json()).then(data => setCuentas(data));
+  const cargarCategorias = () => fetch('/api/ajustes/categorias').then(res => res.json()).then(data => setCategorias(data));
+  const cargarCuentas = () => fetch('/api/ajustes/cuentas').then(res => res.json()).then(data => setCuentas(data));
 
   useEffect(() => {
     cargarCategorias();
@@ -47,8 +47,8 @@ export default function Ajustes() {
     
     // Si desactivamos enviamos DELETE a /:id, si activamos enviamos PUT a /:id/activar
     const url = tipo === 'desactivar' 
-      ? `http://localhost:3000/api/ajustes/${target}/${id}`
-      : `http://localhost:3000/api/ajustes/${target}/${id}/activar`;
+      ? `/api/ajustes/${target}/${id}`
+      : `/api/ajustes/${target}/${id}/activar`;
       
     const method = tipo === 'desactivar' ? 'DELETE' : 'PUT';
 

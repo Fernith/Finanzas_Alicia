@@ -75,8 +75,8 @@ export default function ModalAgregarIngreso({ isOpen, onClose, onSuccess, catego
 
     try {
       const url = ingresoAEditar 
-        ? `http://localhost:3000/api/ingresos/${ingresoAEditar.id}`
-        : 'http://localhost:3000/api/ingresos';
+        ? `/api/ingresos/${ingresoAEditar.id}`
+        : '/api/ingresos';
       const method = ingresoAEditar ? 'PUT' : 'POST';
 
       const response = await fetch(url, {

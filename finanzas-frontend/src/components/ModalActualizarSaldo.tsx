@@ -27,7 +27,7 @@ export default function ModalActualizarSaldo({ isOpen, onClose, onSuccess, cuent
     setEnviando(true);
     
     try {
-      const response = await fetch('http://localhost:3000/api/liquidez/saldos', {
+      const response = await fetch('/api/liquidez/saldos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cuenta_id: cuenta.cuenta_id, fecha, cantidad: Number(cantidad) })

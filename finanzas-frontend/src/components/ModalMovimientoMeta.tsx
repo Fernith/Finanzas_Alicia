@@ -17,7 +17,7 @@ export default function ModalMovimientoMeta({ isOpen, onClose, onSuccess, meta, 
     const montoFinal = isAdd ? Number(cantidad) : -Math.abs(Number(cantidad));
     
     try {
-      const response = await fetch(`http://localhost:3000/api/ahorros/metas/${meta.id}/movimientos`, {
+      const response = await fetch(`/api/ahorros/metas/${meta.id}/movimientos`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fecha, cantidad: montoFinal })
       });

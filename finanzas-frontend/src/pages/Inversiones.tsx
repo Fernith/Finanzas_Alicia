@@ -14,7 +14,7 @@ export default function Inversiones() {
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
 
   const cargarInversiones = () => {
-    fetch('http://localhost:3000/api/inversiones')
+    fetch('/api/inversiones')
       .then(res => res.json())
       .then(data => setInversiones(data))
       .catch(() => setInversiones([]));
@@ -51,7 +51,7 @@ export default function Inversiones() {
   const confirmarEliminacion = async () => {
     if (!idAEliminar) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/inversiones/${idAEliminar}`, { method: 'DELETE' });
+      const res = await fetch(`/api/inversiones/${idAEliminar}`, { method: 'DELETE' });
       if (res.ok) cargarInversiones();
       else alert('No se pudo eliminar la inversión.');
     } catch { alert('Error de conexión.'); }

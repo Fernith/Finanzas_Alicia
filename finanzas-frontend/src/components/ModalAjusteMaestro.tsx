@@ -57,8 +57,8 @@ export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target,
 
     try {
       const url = itemAEditar
-        ? `http://localhost:3000/api/ajustes/${target}/${itemAEditar.id}`
-        : `http://localhost:3000/api/ajustes/${target}`;
+        ? `/api/ajustes/${target}/${itemAEditar.id}`
+        : `/api/ajustes/${target}`;
       const method = itemAEditar ? 'PUT' : 'POST';
 
       const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });

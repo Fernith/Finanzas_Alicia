@@ -22,8 +22,8 @@ export default function Ahorros() {
   const [modalFinalizar, setModalFinalizar] = useState<any>(null);
 
   const cargarDatos = () => {
-    fetch('http://localhost:3000/api/ahorros/metas').then(res => res.json()).then(data => setMetas(data));
-    fetch('http://localhost:3000/api/ahorros/resumen').then(res => res.json()).then(data => setResumen(data));
+    fetch('/api/ahorros/metas').then(res => res.json()).then(data => setMetas(data));
+    fetch('/api/ahorros/resumen').then(res => res.json()).then(data => setResumen(data));
   };
 
   useEffect(() => { cargarDatos(); }, []);
@@ -33,7 +33,7 @@ export default function Ahorros() {
 
   const handleEliminarMeta = async () => {
     if (!itemAEliminar) return;
-    if (await fetch(`http://localhost:3000/api/ahorros/metas/${itemAEliminar.id}`, { method: 'DELETE' }).then(res => res.ok)) {
+    if (await fetch(`/api/ahorros/metas/${itemAEliminar.id}`, { method: 'DELETE' }).then(res => res.ok)) {
       cargarDatos();
       setItemAEliminar(null);
     }

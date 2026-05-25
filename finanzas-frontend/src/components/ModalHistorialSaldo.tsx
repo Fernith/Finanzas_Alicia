@@ -9,7 +9,7 @@ export default function ModalHistorialSaldo({ isOpen, onClose, cuenta }: Props) 
 
   useEffect(() => {
     if (isOpen && cuenta) {
-      fetch(`http://localhost:3000/api/liquidez/saldos/${cuenta.cuenta_id}`)
+      fetch(`/api/liquidez/saldos/${cuenta.cuenta_id}`)
         .then(res => res.json())
         .then(data => setHistorial(data));
     }

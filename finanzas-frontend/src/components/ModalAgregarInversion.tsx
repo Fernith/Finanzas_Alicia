@@ -20,8 +20,8 @@ export default function ModalAgregarInversion({ isOpen, onClose, onSuccess, inve
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/inversiones/categorias').then(r => r.json()).then(d => { setCategorias(d); if(d.length > 0 && !inversionAEditar) setCategoriaId(d[0].id); });
-    fetch('http://localhost:3000/api/inversiones/cuentas').then(r => r.json()).then(d => { setCuentas(d); if(d.length > 0 && !inversionAEditar) setCuentaId(d[0].id); });
+    fetch('/api/inversiones/categorias').then(r => r.json()).then(d => { setCategorias(d); if(d.length > 0 && !inversionAEditar) setCategoriaId(d[0].id); });
+    fetch('/api/inversiones/cuentas').then(r => r.json()).then(d => { setCuentas(d); if(d.length > 0 && !inversionAEditar) setCuentaId(d[0].id); });
   }, [inversionAEditar]);
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function ModalAgregarInversion({ isOpen, onClose, onSuccess, inve
     setEnviando(true);
 
     const payload = { fecha, cantidad: Number(cantidad), categoria_id: categoriaId, cuenta_id: cuentaId, notas: notas || null };
-    const url = inversionAEditar ? `http://localhost:3000/api/inversiones/${inversionAEditar.id}` : 'http://localhost:3000/api/inversiones';
+    const url = inversionAEditar ? `/api/inversiones/${inversionAEditar.id}` : '/api/inversiones';
     
     try {
       const response = await fetch(url, { method: inversionAEditar ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });

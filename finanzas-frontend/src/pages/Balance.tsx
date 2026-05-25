@@ -15,7 +15,7 @@ export default function Balance() {
   const mesesNombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
   const cargarDatos = useCallback(() => {
-    fetch(`http://localhost:3000/api/balance/anual?anio=${anioSeleccionado}`)
+    fetch(`/api/balance/anual?anio=${anioSeleccionado}`)
       .then(res => res.json())
       .then(data => setOperaciones(data))
       .catch(() => setOperaciones([]));
