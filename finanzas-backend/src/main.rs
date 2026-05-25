@@ -4,6 +4,8 @@ mod handlers;
 use axum::{routing::get, Router};
 use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::CorsLayer;
+use std::env;
+use tower_http::services::{ServeDir, ServeFile};
 
 #[tokio::main]
 async fn main() {
@@ -19,6 +21,9 @@ async fn main() {
     println!("✅ Conectado a Supabase correctamente.");
 
     let cors = CorsLayer::permissive();
+
+    let frontend = ServeDir::new("public")
+        .not_found_service(ServeFile::new("public/index.html"));
 
     let app = Router::new()
         // --- RUTAS DE GASTOS ---
@@ -63,10 +68,16 @@ async fn main() {
         .route("/api/ahorros/opciones-finalizar", axum::routing::get(handlers::ahorros::opciones_finalizar))
         .route("/api/ahorros/metas/:id/finalizar", axum::routing::post(handlers::ahorros::finalizar_meta))
 
+
+        .fallback_service(frontend)
+
         .layer(cors)
         .with_state(pool);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    println!("🚀 Servidor Rust corriendo en http://localhost:3000");
+    let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let addr = format!("0.0.0.0:{}", port);
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    
+    println!("🚀 Servidor Rust corriendo en {}", addr);
     axum::serve(listener, app).await.unwrap();
 }
