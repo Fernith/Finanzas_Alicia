@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Settings, Plus, Pencil, Trash2, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
-import ModalAjusteMaestro from '../components/ModalAjusteMaestro';
-import ModalConfirmacion from '../components/ModalConfirmacion';
+import ModalAjusteMaestro from '../ajustes/ModalAjusteMaestro';
+import ModalConfirmacion from '../components/general/ModalConfirmacion';
 
 export default function Ajustes() {
   const [categorias, setCategorias] = useState<any[]>([]);

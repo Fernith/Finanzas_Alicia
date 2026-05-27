@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT \n            o.id::text as \"id!\", o.fecha::text as \"fecha!\", o.cantidad::float as \"cantidad!\", \n            o.categoria_id::text as \"categoria_id!\", c.nombre as \"categoria!\", c.color as \"color!\",\n            o.cuenta_id::text as \"cuenta_id!\", cu.nombre as \"cuenta!\",\n            o.notas\n        FROM operaciones o\n        JOIN categorias c ON o.categoria_id = c.id\n        JOIN cuentas cu ON o.cuenta_id = cu.id\n        WHERE o.tipo_operacion_id = 'AHORRO' AND o.estado = true\n        ORDER BY o.fecha DESC\n        ",
+  "query": "\n        SELECT \n            o.id::text as \"id!\", o.fecha::text as \"fecha!\", o.cantidad::float as \"cantidad!\", \n            o.categoria_id::text as \"categoria_id!\", c.nombre as \"categoria!\", c.color as \"color!\",\n            o.cuenta_id::text as \"cuenta_id!\", cu.nombre as \"cuenta!\", o.descripcion,\n            COALESCE(o.pendiente, false)::bool as \"pendiente!\", COUNT(*) OVER() as \"total_filas!\"\n        FROM operaciones o\n        JOIN categorias c ON o.categoria_id = c.id JOIN cuentas cu ON o.cuenta_id = cu.id\n        WHERE o.tipo_operacion_id = 'AHORRO' \n        ORDER BY o.fecha DESC LIMIT $1 OFFSET $2\n        ",
   "describe": {
     "columns": [
       {
@@ -45,12 +45,25 @@
       },
       {
         "ordinal": 8,
-        "name": "notas",
+        "name": "descripcion",
         "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "pendiente!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "total_filas!",
+        "type_info": "Int8"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
     },
     "nullable": [
       null,
@@ -61,8 +74,10 @@
       true,
       null,
       false,
-      true
+      true,
+      null,
+      null
     ]
   },
-  "hash": "300e21fbc81619c3aabb5830b7eeef2266477b9ddf187e947c424858ccb60849"
+  "hash": "bcbe8404b532b47a09b60fca12040d8c178e01e0f5f443c86158eca31bd735c9"
 }

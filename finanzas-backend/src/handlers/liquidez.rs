@@ -1,10 +1,7 @@
-use axum::{
-    extract::{Path, State},
-    Json, response::IntoResponse,
-    http::StatusCode,
-};
+use axum::{extract::{Path, State}, Json, response::IntoResponse, http::StatusCode};
 use sqlx::PgPool;
 use serde::{Deserialize, Serialize};
+use crate::error::AppError;
 
 #[derive(Serialize)]
 pub struct CuentaLiquidezDTO {
@@ -17,92 +14,68 @@ pub struct CuentaLiquidezDTO {
 }
 
 #[derive(Serialize)]
-pub struct HistorialSaldoDTO {
-    pub id: String,
-    pub fecha: String,
-    pub cantidad: f64,
-}
-
+pub struct HistorialSaldoDTO { pub id: String, pub fecha: String, pub cantidad: f64 }
 #[derive(Deserialize)]
-pub struct NuevoSaldoDTO {
-    pub cuenta_id: String,
-    pub fecha: String,
-    pub cantidad: f64,
-}
+pub struct NuevoSaldoDTO { pub cuenta_id: String, pub fecha: String, pub cantidad: f64 }
 
-pub async fn obtener_saldos_actuales(State(pool): State<PgPool>) -> impl IntoResponse {
-    let cuentas: Vec<(String, String, String)> = sqlx::query_as(
-        "SELECT id::text, nombre, color FROM cuentas WHERE activo = true ORDER BY nombre"
-    ).fetch_all(&pool).await.unwrap_or_default();
-    
-    let mut resultado = Vec::new();
-
-    for (id, nombre, color) in cuentas {
-        let saldo_opt: Option<(f64, String)> = sqlx::query_as(
-            "SELECT cantidad::float, fecha::text FROM saldos_cuentas WHERE cuenta_id = $1::uuid ORDER BY fecha DESC, created_at DESC LIMIT 1"
+pub async fn obtener_saldos_actuales(State(pool): State<PgPool>) -> Result<Json<Vec<CuentaLiquidezDTO>>, AppError> {
+    // 🚀 MAGIA SQL: Toda la lógica de "buscar último saldo y sumar operaciones posteriores" en 1 sola consulta
+    let resultados = sqlx::query!(
+        r#"
+        WITH UltimoSaldo AS (
+            SELECT cuenta_id, cantidad as saldo_inicial, fecha as fecha_saldo,
+                   -- AQUÍ DEVOLVEMOS EL CREATED_AT PARA EL DESEMPATE
+                   ROW_NUMBER() OVER(PARTITION BY cuenta_id ORDER BY fecha DESC, created_at DESC) as rn
+            FROM saldos_cuentas
+        ),
+        SaldosActuales AS (
+            SELECT cuenta_id, saldo_inicial, fecha_saldo FROM UltimoSaldo WHERE rn = 1
+        ),
+        OperacionesPosteriores AS (
+            SELECT o.cuenta_id, 
+                   SUM(CASE WHEN o.tipo_operacion_id = 'INGRESO' THEN o.cantidad ELSE -o.cantidad END) as variacion
+            FROM operaciones o
+            LEFT JOIN SaldosActuales s ON o.cuenta_id = s.cuenta_id
+            WHERE o.pendiente = false 
+              AND o.tipo_operacion_id IN ('INGRESO', 'GASTO')
+              AND (s.fecha_saldo IS NULL OR o.fecha >= s.fecha_saldo)
+            GROUP BY o.cuenta_id
         )
-        .bind(&id)
-        .fetch_optional(&pool).await.unwrap_or(None);
+        SELECT 
+            c.id::text as "cuenta_id!", c.nombre as "nombre!", c.color as "color!", 
+            COALESCE(s.saldo_inicial, 0.0)::float as "ultimo_saldo_manual!",
+            s.fecha_saldo::text as "fecha_actualizacion",
+            (COALESCE(s.saldo_inicial, 0.0) + COALESCE(op.variacion, 0.0))::float as "saldo_calculado!"
+        FROM cuentas c
+        LEFT JOIN SaldosActuales s ON c.id = s.cuenta_id
+        LEFT JOIN OperacionesPosteriores op ON c.id = op.cuenta_id
+        WHERE c.activo = true
+        ORDER BY c.nombre
+        "#
+    ).fetch_all(&pool).await?;
 
-        let (ultimo_manual, fecha_act) = match saldo_opt {
-            Some((cant, f)) => (cant, Some(f)),
-            None => (0.0, None),
-        };
-
-        let mut saldo_calculado = ultimo_manual;
-
-        let query_str = match &fecha_act {
-            Some(f) => format!("SELECT tipo_operacion_id, cantidad::float FROM operaciones WHERE cuenta_id = '{}' AND fecha >= '{}' AND estado = true AND tipo_operacion_id IN ('INGRESO', 'GASTO')", id, f),
-            None => format!("SELECT tipo_operacion_id, cantidad::float FROM operaciones WHERE cuenta_id = '{}' AND estado = true AND tipo_operacion_id IN ('INGRESO', 'GASTO')", id),
-        };
-
-        let ops: Vec<(String, f64)> = sqlx::query_as(&query_str).fetch_all(&pool).await.unwrap_or_default();
-        for (tipo, cantidad) in ops {
-            if tipo == "INGRESO" { saldo_calculado += cantidad; }
-            else if tipo == "GASTO" { saldo_calculado -= cantidad; }
-        }
-
-        resultado.push(CuentaLiquidezDTO {
-            cuenta_id: id,
-            nombre,
-            color,
-            ultimo_saldo_manual: ultimo_manual,
-            fecha_actualizacion: fecha_act,
-            saldo_calculado,
-        });
-    }
-    Json(resultado).into_response()
-}
-
-pub async fn obtener_historial_cuenta(State(pool): State<PgPool>, Path(cuenta_id): Path<String>) -> impl IntoResponse {
-    let rows: Vec<(String, String, f64)> = sqlx::query_as(
-        "SELECT id::text, fecha::text, cantidad::float FROM saldos_cuentas WHERE cuenta_id = $1::uuid ORDER BY fecha DESC, created_at DESC"
-    )
-    .bind(&cuenta_id)
-    .fetch_all(&pool).await.unwrap_or_default();
-
-    let hist: Vec<HistorialSaldoDTO> = rows.into_iter().map(|(id, fecha, cantidad)| {
-        HistorialSaldoDTO { id, fecha, cantidad }
+    let dto = resultados.into_iter().map(|r| CuentaLiquidezDTO {
+        cuenta_id: r.cuenta_id, nombre: r.nombre, color: r.color,
+        ultimo_saldo_manual: r.ultimo_saldo_manual, fecha_actualizacion: r.fecha_actualizacion,
+        saldo_calculado: r.saldo_calculado,
     }).collect();
 
-    // Devolvemos el array directamente convertido a JSON
-    Json(hist).into_response()
+    Ok(Json(dto)) // El error se maneja solo gracias a AppError
 }
 
-pub async fn registrar_saldo(State(pool): State<PgPool>, Json(payload): Json<NuevoSaldoDTO>) -> impl IntoResponse {
-    // Hemos añadido ::date y ::float para que Postgres no tenga dudas del tipo de dato
-    let result = sqlx::query("INSERT INTO saldos_cuentas (cuenta_id, fecha, cantidad) VALUES ($1::uuid, $2::date, $3::float)")
-        .bind(&payload.cuenta_id)
-        .bind(&payload.fecha)
-        .bind(payload.cantidad)
-        .execute(&pool).await;
-    
-    match result { 
-        Ok(_) => (StatusCode::CREATED, "OK").into_response(), 
-        Err(e) => {
-            // Imprimimos el error en rojo/claro en la terminal de Rust por si acaso
-            println!("❌ ERROR AL INSERTAR SALDO: {:?}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
-        } 
-    }
+pub async fn obtener_historial_cuenta(State(pool): State<PgPool>, Path(cuenta_id): Path<String>) -> Result<Json<Vec<HistorialSaldoDTO>>, AppError> {
+    let rows = sqlx::query_as!(
+        HistorialSaldoDTO,
+        r#"SELECT id::text as "id!", fecha::text as "fecha!", cantidad::float as "cantidad!" 
+           FROM saldos_cuentas WHERE cuenta_id = $1::text::uuid ORDER BY fecha DESC, created_at DESC"#,
+        cuenta_id
+    ).fetch_all(&pool).await?;
+    Ok(Json(rows))
+}
+
+pub async fn registrar_saldo(State(pool): State<PgPool>, Json(payload): Json<NuevoSaldoDTO>) -> Result<impl IntoResponse, AppError> {
+    sqlx::query!("INSERT INTO saldos_cuentas (cuenta_id, fecha, cantidad) VALUES ($1::text::uuid, $2::text::date, $3::float)",
+        payload.cuenta_id, payload.fecha, payload.cantidad
+    ).execute(&pool).await?;
+    Ok((StatusCode::CREATED, "OK"))
 }

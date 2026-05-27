@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, TrendingUp, Wallet } from 'lucide-react';
 import { PieChart, Pie, Tooltip, ResponsiveContainer } from 'recharts';
-import MonthYearSelector from '../components/SelectorMesAno';
-import TransactionTable, { type Column } from '../components/TransactionTable';
-import ModalAgregarIngreso from '../components/ModalAgregarIngreso';
+import MonthYearSelector from '../components/general/SelectorMesAno';
+import TransactionTable, { type Column } from '../components/general/TransactionTable';
 import { formatearMoneda } from '../utils/formatters';
-import ModalConfirmacion from '../components/ModalConfirmacion';
+import ModalConfirmacion from '../components/general/ModalConfirmacion';
+import ModalTransaccion from '../components/general/ModalTransaccion';
 
 export default function Ingresos() {
   const fechaActual = new Date();
@@ -38,16 +38,29 @@ export default function Ingresos() {
     fetch('/api/cuentas/ingresos').then(res => res.json()).then(data => setCuentas(data));
   }, []);
 
-  const cargarIngresosDelServidor = useCallback(() => {
-    fetch(`/api/ingresos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}`)
-      .then(res => res.json())
-      .then(data => setIngresos(data))
-      .catch(() => setIngresos([]));
-  }, [mesActual, añoActual, busquedaGlobal]);
+  // --- NUEVOS ESTADOS DE PAGINACIÓN ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
+  const [totalItems, setTotalItems] = useState(0);
 
-  useEffect(() => {
-    cargarIngresosDelServidor();
-  }, [cargarIngresosDelServidor]);
+  useEffect(() => { setCurrentPage(1); }, [mesActual, añoActual, busquedaGlobal]);
+
+  const cargarIngresosDelServidor = useCallback(async () => {
+    try {
+      const offset = (currentPage - 1) * itemsPerPage;
+      const res = await fetch(`/api/ingresos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}&limit=${itemsPerPage}&offset=${offset}`);
+      
+      const count = res.headers.get('X-Total-Count');
+      setTotalItems(Number(count) || 0);
+      
+      const data = await res.json();
+      setIngresos(data);
+    } catch {
+      setIngresos([]);
+    }
+  }, [mesActual, añoActual, busquedaGlobal, currentPage, itemsPerPage]);
+
+  useEffect(() => { cargarIngresosDelServidor(); }, [cargarIngresosDelServidor]);
 
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
 
@@ -139,14 +152,11 @@ export default function Ingresos() {
 
           <div className="w-full">
             <TransactionTable 
-              columns={columnasIngresos} 
-              data={ingresos} 
-              colorTheme="emerald" 
-              categoriasDisponibles={categoriasActivas.map(c => c.nombre)}
-              cuentasDisponibles={cuentasActivas.map(c => c.nombre)}
-              onGlobalSearch={setBusquedaGlobal}
-              onEdit={handleAbrirEdicion}      
-              onDelete={handleEliminarIngreso}  
+              columns={columnasIngresos} data={ingresos} colorTheme="emerald" 
+              categoriasDisponibles={categoriasActivas.map(c => c.nombre)} cuentasDisponibles={cuentasActivas.map(c => c.nombre)}
+              onGlobalSearch={setBusquedaGlobal} onEdit={handleAbrirEdicion} onDelete={handleEliminarIngreso}
+              totalItems={totalItems} currentPage={currentPage} itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage} onItemsPerPageChange={s => { setItemsPerPage(s); setCurrentPage(1); }}
             />
           </div>
         </div>
@@ -182,13 +192,17 @@ export default function Ingresos() {
         </div>
       </div>
 
-      <ModalAgregarIngreso 
-        isOpen={modalAbierto}
-        onClose={() => setModalAbierto(false)}
+      <ModalTransaccion 
+        isOpen={modalAbierto} 
+        onClose={() => {
+          setModalAbierto(false);
+          setIngresoSeleccionadoEditar(null);
+        }} 
         onSuccess={cargarIngresosDelServidor}
-        categorias={categoriasActivas}
-        cuentas={cuentasActivas}
-        ingresoAEditar={ingresoSeleccionadoEditar}
+        categorias={categoriasActivas} 
+        cuentas={cuentasActivas} 
+        transaccionAEditar={ingresoSeleccionadoEditar}
+        tipo="INGRESO"
       />
       <ModalConfirmacion 
         isOpen={!!idAEliminar} 

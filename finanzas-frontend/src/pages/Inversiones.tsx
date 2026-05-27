@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRightLeft, Plus, ChevronLeft, Wallet } from 'lucide-react';
 import { PieChart, Pie, ResponsiveContainer, Tooltip } from 'recharts';
-import TransactionTable, { type Column } from '../components/TransactionTable';
-import ModalConfirmacion from '../components/ModalConfirmacion';
-import ModalAgregarInversion from '../components/ModalAgregarInversion';
+import TransactionTable, { type Column } from '../components/general/TransactionTable';
+import ModalConfirmacion from '../components/general/ModalConfirmacion';
 import { formatearMoneda } from '../utils/formatters';
+import ModalTransaccion from '../components/general/ModalTransaccion';
 
 export default function Inversiones() {
   const [inversiones, setInversiones] = useState<any[]>([]);
@@ -13,14 +13,35 @@ export default function Inversiones() {
   const [inversionAEditar, setInversionAEditar] = useState<any>(null);
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
 
-  const cargarInversiones = () => {
-    fetch('/api/inversiones')
-      .then(res => res.json())
-      .then(data => setInversiones(data))
-      .catch(() => setInversiones([]));
-  };
+  const [categorias, setCategorias] = useState<any[]>([]);
+  const [cuentas, setCuentas] = useState<any[]>([]);
 
-  useEffect(() => { cargarInversiones(); }, []);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // Cargar las categorías y cuentas al inicio
+  useEffect(() => {
+    fetch('/api/inversiones/categorias').then(r => r.json()).then(d => setCategorias(d));
+    fetch('/api/inversiones/cuentas').then(r => r.json()).then(d => setCuentas(d));
+  }, []);
+
+  const cargarInversiones = useCallback(async () => {
+    try {
+      const offset = (currentPage - 1) * itemsPerPage;
+      const res = await fetch(`/api/inversiones?limit=${itemsPerPage}&offset=${offset}`);
+      
+      const count = res.headers.get('X-Total-Count');
+      setTotalItems(Number(count) || 0);
+      
+      const data = await res.json();
+      setInversiones(data);
+    } catch {
+      setInversiones([]);
+    }
+  }, [currentPage, itemsPerPage]);
+
+  useEffect(() => { cargarInversiones(); }, [cargarInversiones]);
 
   const { datosGrafico, totalInvertido } = useMemo(() => {
     const agrupado: Record<string, { valor: number, color: string }> = {};
@@ -96,11 +117,11 @@ export default function Inversiones() {
           </div>
           
           <TransactionTable 
-            columns={columns} 
-            data={inversiones} 
-            colorTheme="amber" 
+            columns={columns} data={inversiones} colorTheme="amber" 
             onEdit={(inv) => { setInversionAEditar(inv); setModalAbierto(true); }}
             onDelete={(id) => setIdAEliminar(id)}
+            totalItems={totalItems} currentPage={currentPage} itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage} onItemsPerPageChange={s => { setItemsPerPage(s); setCurrentPage(1); }}
           />
         </div>
 
@@ -134,7 +155,18 @@ export default function Inversiones() {
         </div>
       </div>
 
-      <ModalAgregarInversion isOpen={modalAbierto} onClose={() => { setModalAbierto(false); setInversionAEditar(null); }} onSuccess={cargarInversiones} inversionAEditar={inversionAEditar} />
+      <ModalTransaccion 
+        isOpen={modalAbierto} 
+        onClose={() => {
+          setModalAbierto(false);
+          setInversionAEditar(null);
+        }} 
+        onSuccess={cargarInversiones} 
+        categorias={categorias} 
+        cuentas={cuentas} 
+        transaccionAEditar={inversionAEditar} 
+        tipo="INVERSION" 
+      />
       <ModalConfirmacion isOpen={!!idAEliminar} onClose={() => setIdAEliminar(null)} onConfirm={confirmarEliminacion} mensaje="¿Estás seguro de que deseas eliminar este registro de inversión permanentemente?" />
     </div>
   );

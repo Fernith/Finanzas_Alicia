@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar } from 'lucide-react';
-import { formatearMoneda } from '../utils/formatters';
+import { formatearMoneda } from '../../utils/formatters';
 
 type Props = { isOpen: boolean; onClose: () => void; cuenta: any; };
 

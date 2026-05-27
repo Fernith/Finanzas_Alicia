@@ -1,10 +1,7 @@
-use axum::{
-    extract::{Path, State},
-    Json, response::IntoResponse,
-    http::StatusCode,
-};
+use axum::{extract::{Path, State}, Json, response::IntoResponse, http::StatusCode};
 use sqlx::PgPool;
 use serde::{Deserialize, Serialize};
+use crate::error::AppError;
 
 #[derive(Serialize)]
 pub struct MovimientoMetaDTO {
@@ -62,45 +59,41 @@ pub struct MaestroDTO {
 }
 
 // --- 1. RESUMEN GLOBAL ---
-pub async fn obtener_resumen(State(pool): State<PgPool>) -> impl IntoResponse {
+pub async fn obtener_resumen(State(pool): State<PgPool>) -> Result<Json<ResumenAhorrosDTO>, AppError> {
     let dinero_invertido: f64 = sqlx::query_scalar(
-        "SELECT COALESCE(SUM(cantidad), 0)::float FROM operaciones WHERE tipo_operacion_id = 'AHORRO' AND estado = true"
+        "SELECT COALESCE(SUM(cantidad), 0)::float FROM operaciones WHERE tipo_operacion_id = 'AHORRO' AND pendiente = false"
     ).fetch_one(&pool).await.unwrap_or(0.0);
 
-    let cuentas_ids: Vec<String> = sqlx::query_scalar(
-        "SELECT id::text FROM cuentas WHERE activo = true"
-    ).fetch_all(&pool).await.unwrap_or_default();
-
-    let mut dinero_liquido = 0.0;
-
-    for cuenta_id in cuentas_ids {
-        // En saldos_cuentas SÍ mantenemos el created_at para afinar el último estado de liquidez
-        let saldo_opt: Option<(f64, String)> = sqlx::query_as(
-            "SELECT cantidad::float, fecha::text FROM saldos_cuentas WHERE cuenta_id = $1::uuid ORDER BY fecha DESC, created_at DESC LIMIT 1"
+    let dinero_liquido: f64 = sqlx::query_scalar!(
+        r#"
+        WITH UltimoSaldo AS (
+            SELECT cuenta_id, cantidad as saldo_inicial, fecha as fecha_saldo,
+                   -- AQUÍ DEVOLVEMOS EL CREATED_AT PARA EL DESEMPATE
+                   ROW_NUMBER() OVER(PARTITION BY cuenta_id ORDER BY fecha DESC, created_at DESC) as rn
+            FROM saldos_cuentas
+        ),
+        SaldosActuales AS (
+            SELECT cuenta_id, saldo_inicial, fecha_saldo FROM UltimoSaldo WHERE rn = 1
+        ),
+        OperacionesPosteriores AS (
+            SELECT o.cuenta_id, 
+                   SUM(CASE WHEN o.tipo_operacion_id = 'INGRESO' THEN o.cantidad ELSE -o.cantidad END) as variacion
+            FROM operaciones o
+            LEFT JOIN SaldosActuales s ON o.cuenta_id = s.cuenta_id
+            WHERE o.pendiente = false 
+              AND o.tipo_operacion_id IN ('INGRESO', 'GASTO')
+              AND (s.fecha_saldo IS NULL OR o.fecha >= s.fecha_saldo)
+            GROUP BY o.cuenta_id
         )
-        .bind(&cuenta_id)
-        .fetch_optional(&pool).await.unwrap_or(None);
+        SELECT COALESCE(SUM(COALESCE(s.saldo_inicial, 0.0) + COALESCE(op.variacion, 0.0)), 0.0)::float as "total_liquido!"
+        FROM cuentas c
+        LEFT JOIN SaldosActuales s ON c.id = s.cuenta_id
+        LEFT JOIN OperacionesPosteriores op ON c.id = op.cuenta_id
+        WHERE c.activo = true
+        "#
+    ).fetch_one(&pool).await.unwrap_or(0.0);
 
-        let (mut saldo_base, fecha_base) = match saldo_opt {
-            Some((cant, f)) => (cant, Some(f)),
-            None => (0.0, None),
-        };
-
-        let query_str = match &fecha_base {
-            Some(f) => format!("SELECT tipo_operacion_id, cantidad::float FROM operaciones WHERE cuenta_id = '{}' AND fecha >= '{}' AND estado = true AND tipo_operacion_id IN ('INGRESO', 'GASTO')", cuenta_id, f),
-            None => format!("SELECT tipo_operacion_id, cantidad::float FROM operaciones WHERE cuenta_id = '{}' AND estado = true AND tipo_operacion_id IN ('INGRESO', 'GASTO')", cuenta_id),
-        };
-
-        let ops: Vec<(String, f64)> = sqlx::query_as(&query_str).fetch_all(&pool).await.unwrap_or_default();
-        
-        for (tipo, cantidad) in ops {
-            if tipo == "INGRESO" { saldo_base += cantidad; } 
-            else if tipo == "GASTO" { saldo_base -= cantidad; }
-        }
-        dinero_liquido += saldo_base;
-    }
-
-    Json(ResumenAhorrosDTO { dinero_liquido, dinero_invertido }).into_response()
+    Ok(Json(ResumenAhorrosDTO { dinero_liquido, dinero_invertido }))
 }
 
 // --- 2. GESTIÓN DE METAS ---
@@ -167,9 +160,9 @@ pub async fn finalizar_meta(State(pool): State<PgPool>, Path(id): Path<String>, 
     if let Some((nombre_meta,)) = meta_res {
         let total_ahorrado: f64 = sqlx::query_scalar("SELECT COALESCE(SUM(cantidad), 0)::float FROM movimientos_metas WHERE meta_id = $1::uuid").bind(&id).fetch_one(&pool).await.unwrap_or(0.0);
         if total_ahorrado > 0.0 {
-            let notas = format!("Finalización de la meta {}", nombre_meta);
-            sqlx::query("INSERT INTO operaciones (tipo_operacion_id, fecha, cantidad, categoria_id, cuenta_id, descripcion, estado) VALUES ('GASTO', $1::date, $2::float, $3::uuid, $4::uuid, $5, true)")
-                .bind(&payload.fecha).bind(total_ahorrado).bind(&payload.categoria_id).bind(&payload.cuenta_id).bind(&notas).execute(&pool).await.ok();
+            let desc = format!("Finalización de la meta {}", nombre_meta);
+            sqlx::query("INSERT INTO operaciones (tipo_operacion_id, fecha, cantidad, categoria_id, cuenta_id, descripcion, pendiente) VALUES ('GASTO', $1::date, $2::float, $3::uuid, $4::uuid, $5, false)")
+                .bind(&payload.fecha).bind(total_ahorrado).bind(&payload.categoria_id).bind(&payload.cuenta_id).bind(&desc).execute(&pool).await.ok();
             sqlx::query("INSERT INTO movimientos_metas (meta_id, fecha, cantidad) VALUES ($1::uuid, $2::date, $3::float)")
                 .bind(&id).bind(&payload.fecha).bind(-total_ahorrado).execute(&pool).await.ok();
         }

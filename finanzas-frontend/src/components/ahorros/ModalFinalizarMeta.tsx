@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Tags, WalletCards } from 'lucide-react';
-import { formatearMoneda } from '../utils/formatters';
+import { formatearMoneda } from '../../utils/formatters';
 
 export default function ModalFinalizarMeta({ isOpen, onClose, onSuccess, meta }: any) {
   const [opciones, setOpciones] = useState({ categorias: [], cuentas: [] });

@@ -1,5 +1,5 @@
 import { X, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
-import { formatearMoneda } from '../utils/formatters';
+import { formatearMoneda } from '../../utils/formatters';
 
 export default function ModalHistorialMeta({ isOpen, onClose, meta }: any) {
   if (!isOpen || !meta) return null;

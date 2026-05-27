@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, TrendingDown, Wallet } from 'lucide-react';
 import { PieChart, Pie, Tooltip, ResponsiveContainer } from 'recharts';
-import MonthYearSelector from '../components/SelectorMesAno';
-import TransactionTable, { type Column } from '../components/TransactionTable';
-import ModalAgregarGasto from '../components/ModalAgregarGasto';
+import MonthYearSelector from '../components/general/SelectorMesAno';
+import TransactionTable, { type Column } from '../components/general/TransactionTable';
 import { formatearMoneda } from '../utils/formatters';
-import ModalConfirmacion from '../components/ModalConfirmacion';
+import ModalConfirmacion from '../components/general/ModalConfirmacion';
+import ModalTransaccion from '../components/general/ModalTransaccion';
 
 export default function Gastos() {
   const fechaActual = new Date();
@@ -21,6 +21,11 @@ export default function Gastos() {
   const [categorias, setCategorias] = useState<any[]>([]);
   const [cuentas, setCuentas] = useState<any[]>([]);
 
+// --- NUEVOS ESTADOS DE PAGINACIÓN ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
+  const [totalItems, setTotalItems] = useState(0);
+
   const columnasGastos: Column[] = [
     { key: 'fecha', label: 'Fecha', sortable: true },
     { key: 'cantidad', label: 'Cantidad', sortable: true },
@@ -34,21 +39,30 @@ export default function Gastos() {
     return gastos.reduce((acc, curr) => acc + Number(curr.cantidad), 0);
   }, [gastos]);
 
+  useEffect(() => { setCurrentPage(1); }, [mesActual, añoActual, busquedaGlobal]);
+
   useEffect(() => {
     fetch('/api/categorias/gastos').then(res => res.json()).then(data => setCategorias(data));
     fetch('/api/cuentas/gastos').then(res => res.json()).then(data => setCuentas(data));
   }, []);
 
-  const cargarGastosDelServidor = useCallback(() => {
-    fetch(`/api/gastos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}`)
-      .then(res => res.json())
-      .then(data => setGastos(data))
-      .catch(() => setGastos([]));
-  }, [mesActual, añoActual, busquedaGlobal]);
+  // --- FETCH CON PAGINACIÓN ---
+  const cargarGastosDelServidor = useCallback(async () => {
+    try {
+      const offset = (currentPage - 1) * itemsPerPage;
+      const res = await fetch(`/api/gastos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}&limit=${itemsPerPage}&offset=${offset}`);
+      
+      const count = res.headers.get('X-Total-Count');
+      setTotalItems(Number(count) || 0);
+      
+      const data = await res.json();
+      setGastos(data);
+    } catch {
+      setGastos([]);
+    }
+  }, [mesActual, añoActual, busquedaGlobal, currentPage, itemsPerPage]);
 
-  useEffect(() => {
-    cargarGastosDelServidor();
-  }, [cargarGastosDelServidor]);
+  useEffect(() => { cargarGastosDelServidor(); }, [cargarGastosDelServidor]);
 
   // Handler para borrar físicamente la fila
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
@@ -152,14 +166,11 @@ export default function Gastos() {
 
           <div className="w-full">
             <TransactionTable 
-              columns={columnasGastos} 
-              data={gastos} 
-              colorTheme="red" 
-              categoriasDisponibles={categoriasActivas.map(c => c.nombre)}
-              cuentasDisponibles={cuentasActivas.map(c => c.nombre)}
-              onGlobalSearch={setBusquedaGlobal}
-              onEdit={handleAbrirEdicion}      
-              onDelete={handleEliminarGasto}  
+              columns={columnasGastos} data={gastos} colorTheme="red" 
+              categoriasDisponibles={categoriasActivas.map(c => c.nombre)} cuentasDisponibles={cuentasActivas.map(c => c.nombre)}
+              onGlobalSearch={setBusquedaGlobal} onEdit={handleAbrirEdicion} onDelete={handleEliminarGasto}
+              totalItems={totalItems} currentPage={currentPage} itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage} onItemsPerPageChange={s => { setItemsPerPage(s); setCurrentPage(1); }}
             />
           </div>
         </div>
@@ -195,13 +206,17 @@ export default function Gastos() {
         </div>
       </div>
 
-      <ModalAgregarGasto 
-        isOpen={modalAbierto}
-        onClose={() => setModalAbierto(false)}
+      <ModalTransaccion 
+        isOpen={modalAbierto} 
+        onClose={() => {
+          setModalAbierto(false);
+          setGastoSeleccionadoEditar(null);
+        }} 
         onSuccess={cargarGastosDelServidor}
-        categorias={categoriasActivas}
-        cuentas={cuentasActivas}
-        gastoAEditar={gastoSeleccionadoEditar}
+        categorias={categoriasActivas} 
+        cuentas={cuentasActivas} 
+        transaccionAEditar={gastoSeleccionadoEditar}
+        tipo="GASTO"
       />
 
     <ModalConfirmacion 

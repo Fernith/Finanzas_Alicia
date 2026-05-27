@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, X, Pencil, Trash2 } from 'lucide-react';
-import { formatearMoneda } from '../utils/formatters';
+import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, X, Pencil, Trash2, Clock } from 'lucide-react';
+import { formatearMoneda } from '../../utils/formatters';
 
 export type Column = { 
   key: string; 
@@ -12,7 +12,11 @@ export type Column = {
 type TableProps = { 
   columns: Column[]; 
   data: any[];
-  // Se añadieron 'amber' y 'purple' a las opciones válidas del colorTheme
+  totalItems: number; // NUEVO
+  currentPage: number; // NUEVO
+  itemsPerPage: number; // NUEVO
+  onPageChange: (page: number) => void; // NUEVO
+  onItemsPerPageChange: (size: number) => void; // NUEVO
   colorTheme?: 'red' | 'emerald' | 'blue' | 'amber' | 'purple';
   categoriasDisponibles?: string[]; 
   cuentasDisponibles?: string[];
@@ -42,7 +46,6 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
     return () => clearTimeout(timer);
   }, [searchTerm, onGlobalSearch]);
 
-  // --- DICCIONARIOS DE TEMAS ACTUALIZADOS ---
   const headerThemes = {
     red: 'bg-red-50/80 dark:bg-red-900/20 border-b border-red-100 dark:border-red-800/50',
     emerald: 'bg-emerald-50/80 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-800/50',
@@ -178,16 +181,27 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
             {paginatedData.length > 0 ? (
               paginatedData.map((row, index) => (
-                <tr key={row.id || index} className={`transition-colors ${rowBg}`}>
+                // Añadida opacidad si está pendiente para diferenciar la fila visualmente también
+                <tr key={row.id || index} className={`transition-colors ${rowBg} ${row.pendiente ? 'opacity-85' : ''}`}>
                   {columns.map((col) => (
                     <td key={col.key} className="p-4 text-sm text-slate-700 dark:text-slate-300">
+                      
+                      {/* --- AQUI SE RENDERIZA EL BADGE DE PENDIENTE --- */}
                       {col.key === 'fecha' ? (
-                        formatearFechaLarga(row[col.key])
+                        <div className="flex items-center gap-2">
+                          <span>{formatearFechaLarga(row[col.key])}</span>
+                          {row.pendiente && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 uppercase tracking-wider">
+                              <Clock size={10} /> Pendiente
+                            </span>
+                          )}
+                        </div>
                       ) : col.key === 'cantidad' ? (
                         <span className="font-semibold text-slate-900 dark:text-white">
                           {formatearMoneda(Number(row[col.key]))} €
                         </span>
                       ) : row[col.key]}
+                      
                     </td>
                   ))}
                   {(onEdit || onDelete) && (

@@ -1,11 +1,13 @@
 // Le decimos a Rust que busque una carpeta o archivo llamado "handlers"
 mod handlers;
+mod error;
 
 use axum::{routing::get, Router};
 use sqlx::postgres::PgPoolOptions;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{CorsLayer, Any};
 use std::env;
 use tower_http::services::{ServeDir, ServeFile};
+use axum::http::HeaderName;
 
 #[tokio::main]
 async fn main() {
@@ -20,7 +22,11 @@ async fn main() {
         
     println!("✅ Conectado a Supabase correctamente.");
 
-    let cors = CorsLayer::permissive();
+    let cors = CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any)
+                .expose_headers([HeaderName::from_static("x-total-count")]);
 
     let frontend = ServeDir::new("public")
         .not_found_service(ServeFile::new("public/index.html"));

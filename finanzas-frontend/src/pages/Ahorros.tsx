@@ -2,11 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { PiggyBank, Plus, Target, ArrowRightLeft, Coins, Pencil, Trash2, ShieldCheck, History, ArrowDownToLine, ArrowUpFromLine, Flag } from 'lucide-react';
 import { formatearMoneda } from '../utils/formatters';
-import ModalConfirmacion from '../components/ModalConfirmacion';
-import ModalMetaAhorro from '../components/ModalMetaAhorro';
-import ModalHistorialMeta from '../components/ModalHistorialMeta';
-import ModalMovimientoMeta from '../components/ModalMovimientoMeta';
-import ModalFinalizarMeta from '../components/ModalFinalizarMeta';
+import ModalConfirmacion from '../components/general/ModalConfirmacion';
+import ModalMetaAhorro from '../components/ahorros/ModalMetaAhorro';
+import ModalHistorialMeta from '../components/ahorros/ModalHistorialMeta';
+import ModalMovimientoMeta from '../components/ahorros/ModalMovimientoMeta';
+import ModalFinalizarMeta from '../components/ahorros/ModalFinalizarMeta';
 
 export default function Ahorros() {
   const [metas, setMetas] = useState<any[]>([]);

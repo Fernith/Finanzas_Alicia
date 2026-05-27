@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT \n            o.fecha::text as \"fecha!\", \n            o.cantidad::float as \"cantidad!\", \n            o.tipo_operacion_id as \"tipo_operacion_id!\", \n            c.nombre as \"categoria!\", \n            c.color as \"color!\"\n        FROM operaciones o\n        JOIN categorias c ON o.categoria_id = c.id\n        WHERE EXTRACT(YEAR FROM o.fecha) = $1 AND o.estado = true\n        ORDER BY o.fecha ASC\n        ",
+  "query": "\n        SELECT \n            o.fecha::text as \"fecha!\", \n            o.cantidad::float as \"cantidad!\", \n            o.tipo_operacion_id as \"tipo_operacion_id!\", \n            c.nombre as \"categoria!\", \n            c.color as \"color!\"\n        FROM operaciones o\n        JOIN categorias c ON o.categoria_id = c.id\n        WHERE EXTRACT(YEAR FROM o.fecha) = $1 AND o.pendiente = false\n        ORDER BY o.fecha ASC\n        ",
   "describe": {
     "columns": [
       {
@@ -42,5 +42,5 @@
       true
     ]
   },
-  "hash": "32b885f0017528cfd53bedab07cf2953b37f2953c9533d066ee0e530116605f7"
+  "hash": "1c18656b51c6af32c599cdd9574bedfce6415e6dcb434f19ac677ea0e73c8393"
 }

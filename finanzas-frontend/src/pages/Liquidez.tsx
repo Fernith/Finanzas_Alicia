@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Coins, RefreshCw, History, ArrowRight, ChevronLeft } from 'lucide-react';
 import { formatearMoneda } from '../utils/formatters';
-import ModalActualizarSaldo from '../components/ModalActualizarSaldo';
-import ModalHistorialSaldo from '../components/ModalHistorialSaldo';
+import ModalActualizarSaldo from '../components/liquidez/ModalActualizarSaldo';
+import ModalHistorialSaldo from '../components/liquidez/ModalHistorialSaldo';
 
 export default function Liquidez() {
   const [cuentas, setCuentas] = useState<any[]>([]);

@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            o.id::text as \"id!\",\n            o.fecha::text as \"fecha!\", \n            o.cantidad::float as \"cantidad!\",\n            c.nombre as \"categoria!\",\n            cu.nombre as \"cuenta!\",\n            o.descripcion,\n            COALESCE(o.pendiente, false)::bool as \"pendiente!\",\n            COUNT(*) OVER() as \"total_filas!\" -- Esto cuenta el total real antes de aplicar el LIMIT\n        FROM operaciones o\n        JOIN categorias c ON o.categoria_id = c.id\n        JOIN cuentas cu ON o.cuenta_id = cu.id\n        WHERE o.tipo_operacion_id = 'GASTO'\n          AND (\n              ($3::text != '' AND (\n                  o.descripcion ILIKE '%' || $3::text || '%' OR \n                  c.nombre ILIKE '%' || $3::text || '%' OR \n                  cu.nombre ILIKE '%' || $3::text || '%'\n              ))\n              OR \n              ($3::text = '' AND EXTRACT(MONTH FROM o.fecha) = $1 AND EXTRACT(YEAR FROM o.fecha) = $2)\n          )\n        ORDER BY o.fecha DESC\n        LIMIT $4 OFFSET $5\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "fecha!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "cantidad!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "categoria!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "cuenta!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "descripcion",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "pendiente!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "total_filas!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      false,
+      false,
+      true,
+      null,
+      null
+    ]
+  },
+  "hash": "b117624df42e95a9f896d8fc7456335725ecb1511cb008d4bb7ae52e9d5fce8c"
+}
