@@ -1,13 +1,16 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, TrendingUp, Wallet } from 'lucide-react';
+import { Plus, TrendingUp, Wallet, Clock } from 'lucide-react';
 import { PieChart, Pie, Tooltip, ResponsiveContainer } from 'recharts';
 import MonthYearSelector from '../components/general/SelectorMesAno';
 import TransactionTable, { type Column } from '../components/general/TransactionTable';
 import { formatearMoneda } from '../utils/formatters';
 import ModalConfirmacion from '../components/general/ModalConfirmacion';
 import ModalTransaccion from '../components/general/ModalTransaccion';
+import { useConfig } from '../context/ConfigContext';
 
 export default function Ingresos() {
+  const { usarPendientes } = useConfig();
+  
   const fechaActual = new Date();
   const [mesActual, setMesActual] = useState(fechaActual.getMonth() + 1);
   const [añoActual, setAñoActual] = useState(fechaActual.getFullYear());
@@ -16,10 +19,15 @@ export default function Ingresos() {
   const [ingresoSeleccionadoEditar, setIngresoSeleccionadoEditar] = useState<any>(null);
 
   const [ingresos, setIngresos] = useState<any[]>([]);
+  const [ingresosGlobales, setIngresosGlobales] = useState<any[]>([]);
+
   const [categorias, setCategorias] = useState<any[]>([]);
   const [cuentas, setCuentas] = useState<any[]>([]);
 
-  // NUEVO: La columna extra para ingresos añadida a la tabla
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
+  const [totalItems, setTotalItems] = useState(0);
+
   const columnasIngresos: Column[] = [
     { key: 'fecha', label: 'Fecha', sortable: true },
     { key: 'cantidad', label: 'Cantidad', sortable: true },
@@ -29,23 +37,24 @@ export default function Ingresos() {
     { key: 'descripcion', label: 'Descripción' }
   ];
 
-  const totalIngresadoMes = useMemo(() => {
-    return ingresos.reduce((acc, curr) => acc + Number(curr.cantidad), 0);
-  }, [ingresos]);
+  const totalRealMes = useMemo(() => {
+    return ingresosGlobales
+      .filter(i => usarPendientes ? !i.pendiente : true)
+      .reduce((acc, curr) => acc + Number(curr.cantidad), 0);
+  }, [ingresosGlobales, usarPendientes]);
+
+  const totalConPendientes = useMemo(() => {
+    return ingresosGlobales.reduce((acc, curr) => acc + Number(curr.cantidad), 0);
+  }, [ingresosGlobales]);
+
+  useEffect(() => { setCurrentPage(1); }, [mesActual, añoActual, busquedaGlobal]);
 
   useEffect(() => {
     fetch('/api/categorias/ingresos').then(res => res.json()).then(data => setCategorias(data));
     fetch('/api/cuentas/ingresos').then(res => res.json()).then(data => setCuentas(data));
   }, []);
 
-  // --- NUEVOS ESTADOS DE PAGINACIÓN ---
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(15);
-  const [totalItems, setTotalItems] = useState(0);
-
-  useEffect(() => { setCurrentPage(1); }, [mesActual, añoActual, busquedaGlobal]);
-
-  const cargarIngresosDelServidor = useCallback(async () => {
+  const cargarIngresosPaginados = useCallback(async () => {
     try {
       const offset = (currentPage - 1) * itemsPerPage;
       const res = await fetch(`/api/ingresos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}&limit=${itemsPerPage}&offset=${offset}`);
@@ -60,22 +69,37 @@ export default function Ingresos() {
     }
   }, [mesActual, añoActual, busquedaGlobal, currentPage, itemsPerPage]);
 
-  useEffect(() => { cargarIngresosDelServidor(); }, [cargarIngresosDelServidor]);
+  const cargarIngresosGlobales = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/ingresos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}&limit=100000&offset=0`);
+      const data = await res.json();
+      setIngresosGlobales(data);
+    } catch {
+      setIngresosGlobales([]);
+    }
+  }, [mesActual, añoActual, busquedaGlobal]);
+
+  useEffect(() => { cargarIngresosPaginados(); }, [cargarIngresosPaginados]);
+  useEffect(() => { cargarIngresosGlobales(); }, [cargarIngresosGlobales]);
 
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
 
   const handleEliminarIngreso = (id: string) => {
-    setIdAEliminar(id);
+    setIdAEliminar(id); 
   };
 
   const confirmarEliminacion = async () => {
     if (!idAEliminar) return;
     try {
       const res = await fetch(`/api/ingresos/${idAEliminar}`, { method: 'DELETE' });
-      if (res.ok) cargarIngresosDelServidor();
-      else alert('No se pudo eliminar el ingreso.');
+      if (res.ok) {
+        cargarIngresosPaginados();
+        cargarIngresosGlobales();
+      } else alert('No se pudo eliminar el ingreso.');
     } catch {
       alert('Error de conexión.');
+    } finally {
+      setIdAEliminar(null);
     }
   };
 
@@ -84,10 +108,22 @@ export default function Ingresos() {
     setModalAbierto(true);
   };
 
+  const handleMarcarCompletado = async (id: string) => {
+    try {
+      const res = await fetch(`/api/ingresos/${id}/completar`, { method: 'PATCH' });
+      if (res.ok) {
+        cargarIngresosPaginados();
+        cargarIngresosGlobales();
+      } else alert('Error al actualizar el estado.');
+    } catch {
+      alert('Error de conexión.');
+    }
+  };
+
   const datosGrafico = useMemo(() => {
     const totales: Record<string, number> = {};
-    ingresos.forEach(ing => {
-      totales[ing.categoria] = (totales[ing.categoria] || 0) + Number(ing.cantidad);
+    ingresosGlobales.forEach(ingreso => {
+      totales[ingreso.categoria] = (totales[ingreso.categoria] || 0) + Number(ingreso.cantidad);
     });
     return Object.entries(totales)
       .map(([name, value]) => {
@@ -95,7 +131,7 @@ export default function Ingresos() {
         return { name, value, fill: catBBDD?.color || '#94a3b8' };
       })
       .sort((a, b) => b.value - a.value);
-  }, [ingresos, categorias]);
+  }, [ingresosGlobales, categorias]);
 
   const categoriasActivas = useMemo(() => categorias.filter(c => c.activo !== false), [categorias]);
   const cuentasActivas = useMemo(() => cuentas.filter(c => c.activo !== false), [cuentas]);
@@ -103,7 +139,6 @@ export default function Ingresos() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
-      {/* CABECERA (Tonos esmeralda) */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-gradient-to-br from-emerald-100 to-teal-200 dark:from-emerald-900/40 dark:to-teal-900/20 rounded-2xl shadow-sm border border-emerald-200/50 dark:border-emerald-800/50">
@@ -111,40 +146,61 @@ export default function Ingresos() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Mis Ingresos</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Registra y monitorea tus fuentes de dinero</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Controla y analiza tus entradas de dinero</p>
           </div>
         </div>
       </div>
 
-      {/* TARJETA DE TOTAL ACUMULADO DINÁMICA (Verde) */}
-      <div className="w-full md:w-1/2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300">
-        <div className="p-4 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
-          <Wallet size={40} />
-        </div>
-        <div className="flex flex-col justify-center">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] text-center sm:text-left">
-            {busquedaGlobal ? 'Total Búsqueda' : 'Total ingresado este mes'}
-          </p>
-          <p className="text-4xl sm:text-6xl font-black text-emerald-600 dark:text-emerald-500 mt-1 tabular-nums text-center sm:text-left">
-            {formatearMoneda(totalIngresadoMes)} <span className="text-xl sm:text-2xl font-bold ml-1">€</span>
+      <div className={`grid grid-cols-1 ${usarPendientes ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
+        
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300">
+          <div className="p-4 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+            <Wallet size={40} />
+          </div>
+          <div className="flex flex-col justify-center">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] text-center sm:text-left">
+              {busquedaGlobal ? 'Búsqueda Real' : (usarPendientes ? 'Ingreso Real Percibido' : 'Total ingresado este mes')}
             </p>
+            <p className="text-4xl sm:text-5xl font-black text-emerald-600 dark:text-emerald-500 mt-1 tabular-nums text-center sm:text-left">
+              {formatearMoneda(totalRealMes)} <span className="text-xl sm:text-2xl font-bold ml-1">€</span>
+            </p>
+          </div>
         </div>
+
+        {usarPendientes && (
+          <div className="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-amber-50 dark:bg-amber-900/10 rounded-bl-full -z-10"></div>
+            <div className="p-4 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">
+              <Clock size={40} />
+            </div>
+            <div className="flex flex-col justify-center">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] text-center sm:text-left">
+                {busquedaGlobal ? 'Búsqueda Total (Inc. Pendientes)' : 'Total (Inc. Pendientes)'}
+              </p>
+              <p className="text-4xl sm:text-5xl font-black text-amber-600 dark:text-amber-500 mt-1 tabular-nums text-center sm:text-left">
+                {formatearMoneda(totalConPendientes)} <span className="text-xl sm:text-2xl font-bold ml-1">€</span>
+              </p>
+            </div>
+          </div>
+        )}
+
       </div>
 
-      {/* CONTENIDO PRINCIPAL */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex flex-col overflow-hidden">
           
           <div className="p-5 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col gap-5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h2 className="text-lg font-bold text-slate-800 dark:text-white">Listado de Ingresos</h2>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">Listado de Transacciones</h2>
+              
               <button 
                 onClick={() => { setIngresoSeleccionadoEditar(null); setModalAbierto(true); }}
-                className="flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-600 dark:from-emerald-700 dark:to-emerald-800 text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-500/30 active:scale-95 transition-all border border-emerald-400/20"
+                className="flex items-center justify-center w-full sm:w-auto bg-gradient-to-r bg-emerald-500 dark:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-500/30 active:scale-95 transition-all border border-emerald-400/20"
               >
-                <Plus size={20} className="mr-2" /> Agregar Ingreso
+                <Plus size={20} className="mr-2" /> Añadir Ingreso
               </button>
             </div>
+
             <div className="flex w-full overflow-x-auto pb-1 sm:pb-0">
               <MonthYearSelector mesSeleccionado={mesActual} añoSeleccionado={añoActual} onMesChange={setMesActual} onAñoChange={setAñoActual} />
             </div>
@@ -155,13 +211,13 @@ export default function Ingresos() {
               columns={columnasIngresos} data={ingresos} colorTheme="emerald" 
               categoriasDisponibles={categoriasActivas.map(c => c.nombre)} cuentasDisponibles={cuentasActivas.map(c => c.nombre)}
               onGlobalSearch={setBusquedaGlobal} onEdit={handleAbrirEdicion} onDelete={handleEliminarIngreso}
+              onMarcarCompletado={handleMarcarCompletado}
               totalItems={totalItems} currentPage={currentPage} itemsPerPage={itemsPerPage}
               onPageChange={setCurrentPage} onItemsPerPageChange={s => { setItemsPerPage(s); setCurrentPage(1); }}
             />
           </div>
         </div>
 
-        {/* GRÁFICO */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-5 flex flex-col sticky top-24">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Resumen por Categoría</h2>
           {datosGrafico.length > 0 ? (
@@ -198,19 +254,19 @@ export default function Ingresos() {
           setModalAbierto(false);
           setIngresoSeleccionadoEditar(null);
         }} 
-        onSuccess={cargarIngresosDelServidor}
+        onSuccess={() => { cargarIngresosPaginados(); cargarIngresosGlobales(); }}
         categorias={categoriasActivas} 
         cuentas={cuentasActivas} 
         transaccionAEditar={ingresoSeleccionadoEditar}
         tipo="INGRESO"
       />
+
       <ModalConfirmacion 
         isOpen={!!idAEliminar} 
         onClose={() => setIdAEliminar(null)} 
         onConfirm={confirmarEliminacion}
         mensaje="¿Estás seguro de que deseas eliminar este ingreso permanentemente?"
       />
-
-    </div>
+    </div> 
   );
 }

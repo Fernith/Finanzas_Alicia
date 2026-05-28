@@ -37,12 +37,14 @@ async fn main() {
         .route("/api/gastos/:id", axum::routing::put(handlers::gastos::actualizar_gasto).delete(handlers::gastos::eliminar_gasto))
         .route("/api/categorias/gastos", get(handlers::gastos::obtener_categorias_gastos))
         .route("/api/cuentas/gastos", get(handlers::gastos::obtener_cuentas_gastos))
+        .route("/api/gastos/:id/completar", axum::routing::patch(handlers::gastos::completar_operacion))
         
         // --- RUTAS DE INGRESOS (NUEVO) ---
         .route("/api/ingresos", get(handlers::ingresos::obtener_ingresos).post(handlers::ingresos::crear_ingreso))
         .route("/api/ingresos/:id", axum::routing::put(handlers::ingresos::actualizar_ingreso).delete(handlers::ingresos::eliminar_ingreso))
         .route("/api/categorias/ingresos", get(handlers::ingresos::obtener_categorias_ingresos))
         .route("/api/cuentas/ingresos", get(handlers::ingresos::obtener_cuentas_ingresos))
+        .route("/api/ingresos/:id/completar", axum::routing::patch(handlers::ingresos::completar_operacion))
 
         // --- RUTAS DE CONFIGURACIÓN / AJUSTES ---
         .route("/api/ajustes/categorias", axum::routing::get(handlers::ajustes::listar_categorias).post(handlers::ajustes::crear_categoria))
@@ -67,12 +69,16 @@ async fn main() {
         .route("/api/inversiones/cuentas", axum::routing::get(handlers::inversiones::obtener_cuentas_inversiones))
         .route("/api/inversiones", axum::routing::get(handlers::inversiones::listar_inversiones).post(handlers::inversiones::crear_inversion))
         .route("/api/inversiones/:id", axum::routing::put(handlers::inversiones::modificar_inversion).delete(handlers::inversiones::eliminar_inversion))
+        .route("/api/inversiones/:id/completar", axum::routing::patch(handlers::inversiones::completar_operacion))
 
         // --- RUTAS DE LIQUIDEZ ---
         .route("/api/liquidez/saldos", axum::routing::get(handlers::liquidez::obtener_saldos_actuales).post(handlers::liquidez::registrar_saldo))
         .route("/api/liquidez/saldos/:cuenta_id", axum::routing::get(handlers::liquidez::obtener_historial_cuenta))
         .route("/api/ahorros/opciones-finalizar", axum::routing::get(handlers::ahorros::opciones_finalizar))
         .route("/api/ahorros/metas/:id/finalizar", axum::routing::post(handlers::ahorros::finalizar_meta))
+
+        // CONFIGURACION
+        .route("/api/configuracion", axum::routing::get(handlers::ajustes::obtener_configuracion).put(handlers::ajustes::actualizar_configuracion))
 
 
         .fallback_service(frontend)

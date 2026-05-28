@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Settings, Plus, Pencil, Trash2, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
-import ModalAjusteMaestro from '../ajustes/ModalAjusteMaestro';
+import { Settings, Plus, Pencil, Trash2, CheckCircle, XCircle, RotateCcw, Clock } from 'lucide-react';
+import ModalAjusteMaestro from '../components/ajustes/ModalAjusteMaestro';
 import ModalConfirmacion from '../components/general/ModalConfirmacion';
+import { useConfig } from '../context/ConfigContext';
 
 export default function Ajustes() {
+  const { usarPendientes, setUsarPendientes } = useConfig();
   const [categorias, setCategorias] = useState<any[]>([]);
   const [cuentas, setCuentas] = useState<any[]>([]);
 
@@ -11,7 +13,8 @@ export default function Ajustes() {
   const [targetModal, setTargetModal] = useState<'categorias' | 'cuentas'>('categorias');
   const [itemSeleccionado, setItemSeleccionado] = useState<any>(null);
 
-  // ESTADO MEJORADO: Ahora sabe si la acción es activar o desactivar
+  // Estados para modales de confirmación
+  const [modalPendientesAbierto, setModalPendientesAbierto] = useState(false);
   const [accionConfirmacion, setAccionConfirmacion] = useState<{ 
     target: 'categorias' | 'cuentas', 
     id: string, 
@@ -39,17 +42,11 @@ export default function Ajustes() {
     setModalOpen(true);
   };
 
-  // Lógica unificada para el modal de confirmación
   const ejecutarAccionConfirmada = async () => {
     if (!accionConfirmacion) return;
     
     const { target, id, tipo } = accionConfirmacion;
-    
-    // Si desactivamos enviamos DELETE a /:id, si activamos enviamos PUT a /:id/activar
-    const url = tipo === 'desactivar' 
-      ? `/api/ajustes/${target}/${id}`
-      : `/api/ajustes/${target}/${id}/activar`;
-      
+    const url = tipo === 'desactivar' ? `/api/ajustes/${target}/${id}` : `/api/ajustes/${target}/${id}/activar`;
     const method = tipo === 'desactivar' ? 'DELETE' : 'PUT';
 
     try {
@@ -63,6 +60,30 @@ export default function Ajustes() {
       alert('Error de conexión.'); 
     } finally {
       setAccionConfirmacion(null);
+    }
+  };
+
+  // --- LÓGICA CONFIRMACIÓN PENDIENTES ---
+  const confirmarTogglePendientes = async () => {
+    const nuevoEstado = !usarPendientes;
+    setUsarPendientes(nuevoEstado); 
+    
+    try {
+      const res = await fetch('/api/configuracion', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usar_pendientes: nuevoEstado })
+      });
+      
+      if (!res.ok) {
+        alert('Error al guardar la configuración');
+        setUsarPendientes(!nuevoEstado);
+      }
+    } catch (e) {
+      alert('Error de conexión al guardar la configuración');
+      setUsarPendientes(!nuevoEstado); 
+    } finally {
+      setModalPendientesAbierto(false);
     }
   };
 
@@ -86,16 +107,12 @@ export default function Ajustes() {
                 <span className="w-4 h-4 rounded-full shadow-inner border border-black/10 shrink-0" style={{ backgroundColor: item.color }}></span>
                 <div>
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{item.nombre}</p>
-                  
                   <div className="flex gap-1 mt-1 flex-wrap">
-                    {/* Renderizado para Categorías (String simple) */}
                     {typeof item.tipo_operacion_id === 'string' && (
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${item.tipo_operacion_id === 'GASTO' ? 'bg-red-50 text-red-600 dark:bg-red-950/30' : item.tipo_operacion_id === 'INGRESO' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30' : 'bg-amber-50 text-amber-600 dark:bg-amber-950/30'}`}>
                         {item.tipo_operacion_id}
                       </span>
                     )}
-
-                    {/* Renderizado para Cuentas (Array de Strings) */}
                     {Array.isArray(item.tipos_operacion) && item.tipos_operacion.map((tipo: string) => (
                       <span key={tipo} className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${tipo === 'GASTO' ? 'bg-red-50 text-red-600 dark:bg-red-950/30' : tipo === 'INGRESO' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30' : 'bg-amber-50 text-amber-600 dark:bg-amber-950/30'}`}>
                         {tipo}
@@ -114,19 +131,12 @@ export default function Ajustes() {
                 
                 <button onClick={() => handleAbrirEdicion(target, item)} className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 rounded-lg transition-colors" title="Editar"><Pencil size={15} /></button>
                 
-                {/* BOTÓN DINÁMICO: Eliminar (Papelera) si está activo, Reactivar (Flecha) si está inactivo */}
                 {item.activo ? (
-                  <button 
-                    onClick={() => setAccionConfirmacion({ target, id: item.id, nombre: item.nombre, tipo: 'desactivar' })} 
-                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors" title="Desactivar"
-                  >
+                  <button onClick={() => setAccionConfirmacion({ target, id: item.id, nombre: item.nombre, tipo: 'desactivar' })} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors" title="Desactivar">
                     <Trash2 size={15} />
                   </button>
                 ) : (
-                  <button 
-                    onClick={() => setAccionConfirmacion({ target, id: item.id, nombre: item.nombre, tipo: 'activar' })} 
-                    className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-lg transition-colors" title="Reactivar"
-                  >
+                  <button onClick={() => setAccionConfirmacion({ target, id: item.id, nombre: item.nombre, tipo: 'activar' })} className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-lg transition-colors" title="Reactivar">
                     <RotateCcw size={15} />
                   </button>
                 )}
@@ -154,6 +164,21 @@ export default function Ajustes() {
         </div>
       </div>
 
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Clock size={20} className="text-amber-500"/> Gestión de Operaciones Pendientes
+          </h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Activa esta opción para registrar operaciones que aún no se han reflejado en tu banco.
+          </p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer shrink-0">
+          <input type="checkbox" className="sr-only peer" checked={usarPendientes} onChange={() => setModalPendientesAbierto(true)}/>
+          <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+        </label>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         {renderColumnaMaestra('Catálogo de Categorías', categorias, 'categorias')}
         {renderColumnaMaestra('Catálogo de Cuentas Financieras', cuentas, 'cuentas')}
@@ -167,7 +192,6 @@ export default function Ajustes() {
         itemAEditar={itemSeleccionado}
       />
 
-      {/* MODAL DE CONFIRMACIÓN DINÁMICO */}
       <ModalConfirmacion 
         isOpen={!!accionConfirmacion} 
         onClose={() => setAccionConfirmacion(null)} 
@@ -180,6 +204,19 @@ export default function Ajustes() {
         }
         textoBoton={accionConfirmacion?.tipo === 'desactivar' ? "Desactivar" : "Reactivar"}
         variante={accionConfirmacion?.tipo === 'desactivar' ? 'danger' : 'success'}
+      />
+
+      <ModalConfirmacion 
+        isOpen={modalPendientesAbierto} 
+        onClose={() => setModalPendientesAbierto(false)} 
+        onConfirm={confirmarTogglePendientes}
+        titulo={usarPendientes ? "Desactivar Operaciones Pendientes" : "Activar Operaciones Pendientes"}
+        mensaje={usarPendientes 
+          ? "¿Estás seguro de que deseas desactivar la gestión de operaciones pendientes? Dejarán de mostrarse las operaciones como pendientes en los listados y las sumas se calcularán sobre el total de registros."
+          : "¿Estás seguro de que deseas activar la gestión de operaciones pendientes? Podrás registrar movimientos que aún no se han reflejado en el banco y ver un balance real frente al balance teórico."
+        }
+        textoBoton={usarPendientes ? "Desactivar" : "Activar"}
+        variante={usarPendientes ? 'danger' : 'success'}
       />
     </div>
   );

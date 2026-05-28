@@ -25,44 +25,57 @@ export default function ModalTransaccion({ isOpen, onClose, onSuccess, categoria
   const [pendiente, setPendiente] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
-  // Efecto 1: Cargar datos cuando se abre el modal o cambia la transacción
+  // EFECTO 1: Seteo inicial de campos que NO dependen de peticiones asíncronas
   useEffect(() => {
     if (isOpen) {
       if (transaccionAEditar) {
         setFecha(transaccionAEditar.fecha || hoy);
         setCantidad(String(transaccionAEditar.cantidad || ''));
-
-        const catId = transaccionAEditar.categoria_id || 
-                      categorias.find(c => c.nombre === transaccionAEditar.categoria)?.id || 
-                      categorias[0]?.id || '';
-        setCategoriaId(catId);
-
-        const ctaId = transaccionAEditar.cuenta_id || 
-                      cuentas.find(c => c.nombre === transaccionAEditar.cuenta)?.id || 
-                      cuentas[0]?.id || '';
-        setCuentaId(ctaId);
-
         setDescripcion(transaccionAEditar.descripcion || '');
         setCampoExtra(transaccionAEditar.campo_extra_ingreso || '');
         setPendiente(transaccionAEditar.pendiente || false);
+        
+        // Vaciamos temporalmente para que el Efecto 2 haga la coincidencia correcta cuando carguen las listas
+        setCategoriaId('');
+        setCuentaId('');
       } else {
         // Modo "Nuevo"
         setFecha(hoy);
         setCantidad('');
-        setCategoriaId(categorias[0]?.id || '');
-        setCuentaId(cuentas[0]?.id || '');
         setDescripcion('');
         setCampoExtra('');
         setPendiente(false);
+        setCategoriaId('');
+        setCuentaId('');
       }
     }
-  }, [isOpen, transaccionAEditar, categorias, cuentas, hoy]);
+  }, [isOpen, transaccionAEditar, hoy]);
 
-  // Efecto 2 (CRÍTICO): Fallback por si las listas de categorías/cuentas cargan DESPUÉS de abrir el modal
+  // EFECTO 2: Asignación segura de Selectores una vez que las listas tienen datos
   useEffect(() => {
-    if (isOpen && !categoriaId && categorias.length > 0) setCategoriaId(categorias[0].id);
-    if (isOpen && !cuentaId && cuentas.length > 0) setCuentaId(cuentas[0].id);
-  }, [categorias, cuentas, isOpen, categoriaId, cuentaId]);
+    if (isOpen) {
+      if (transaccionAEditar) {
+        // Modo Edición: Buscamos el ID correcto cuando ya tenemos el array de categorías
+        if (categorias.length > 0 && !categoriaId) {
+          const catId = transaccionAEditar.categoria_id || 
+                        categorias.find(c => c.nombre === transaccionAEditar.categoria)?.id || 
+                        categorias[0]?.id || '';
+          setCategoriaId(catId);
+        }
+        // Lo mismo para las cuentas
+        if (cuentas.length > 0 && !cuentaId) {
+          const ctaId = transaccionAEditar.cuenta_id || 
+                        cuentas.find(c => c.nombre === transaccionAEditar.cuenta)?.id || 
+                        cuentas[0]?.id || '';
+          setCuentaId(ctaId);
+        }
+      } else {
+        // Modo Nuevo: Simplemente ponemos el primero por defecto cuando carguen
+        if (categorias.length > 0 && !categoriaId) setCategoriaId(categorias[0].id);
+        if (cuentas.length > 0 && !cuentaId) setCuentaId(cuentas[0].id);
+      }
+    }
+  }, [isOpen, transaccionAEditar, categorias, cuentas, categoriaId, cuentaId]);
 
   if (!isOpen) return null;
 
@@ -118,7 +131,7 @@ export default function ModalTransaccion({ isOpen, onClose, onSuccess, categoria
 
       if (res.ok) {
         onSuccess();
-        onClose(); // Esto llama al padre que reseteará los estados
+        onClose(); 
       } else {
         const errorMsg = await res.text();
         console.error('Error del servidor:', errorMsg);
@@ -132,7 +145,6 @@ export default function ModalTransaccion({ isOpen, onClose, onSuccess, categoria
     }
   };
 
-  // Clases unificadas para inputs (Modo Oscuro Corregido)
   const inputClases = `w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 ${tema.ring} transition-all`;
 
   return (

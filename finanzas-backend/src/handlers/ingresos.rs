@@ -136,3 +136,16 @@ pub async fn eliminar_ingreso(State(pool): State<PgPool>, Path(id): Path<String>
     let result = sqlx::query!("DELETE FROM operaciones WHERE id = $1::text::uuid AND tipo_operacion_id = 'INGRESO'", id).execute(&pool).await;
     match result { Ok(_) => (StatusCode::OK, "Ingreso eliminado").into_response(), Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response() }
 }
+
+// Fíjate que ahora actualizamos 'operaciones' y no 'gastos'
+pub async fn completar_operacion(State(pool): State<PgPool>, Path(id): Path<String>) -> impl IntoResponse {
+    let result = sqlx::query("UPDATE operaciones SET pendiente = false WHERE id = $1::uuid")
+        .bind(&id)
+        .execute(&pool)
+        .await;
+        
+    match result { 
+        Ok(_) => (StatusCode::OK, "OK").into_response(), 
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() 
+    }
+}

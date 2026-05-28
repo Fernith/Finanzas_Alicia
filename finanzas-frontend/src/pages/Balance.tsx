@@ -9,7 +9,7 @@ export default function Balance() {
   const mesActualReal = fechaActualObj.getMonth();
   
   const [anioSeleccionado, setAnioSeleccionado] = useState(anioActualReal);
-  const años = Array.from({ length: anioActualReal - 2024 + 2 }, (_, i) => 2024 + i);
+  const años = Array.from({ length: anioActualReal - 2025 + 2 }, (_, i) => 2025 + i);
 
   const [operaciones, setOperaciones] = useState<any[]>([]);
   const mesesNombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];

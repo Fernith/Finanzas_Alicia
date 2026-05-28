@@ -11,7 +11,7 @@ export default function SelectorMesAno({ mesSeleccionado, añoSeleccionado, onMe
   const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   
   const añoActual = new Date().getFullYear();
-  const años = Array.from({ length: añoActual - 2024 + 2 }, (_, i) => 2024 + i);
+  const años = Array.from({ length: añoActual - 2025 + 2 }, (_, i) => 2025 + i);
 
   // NUEVO: Función para detectar el mes y año real del sistema operativo y aplicarlo
   const irAlPresente = () => {

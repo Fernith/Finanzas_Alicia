@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, X, Pencil, Trash2, Clock } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, X, Pencil, Trash2, Clock, CheckCircle2, Check } from 'lucide-react';
 import { formatearMoneda } from '../../utils/formatters';
+import { useConfig } from '../../context/ConfigContext';
 
 export type Column = { 
   key: string; 
@@ -12,17 +13,18 @@ export type Column = {
 type TableProps = { 
   columns: Column[]; 
   data: any[];
-  totalItems: number; // NUEVO
-  currentPage: number; // NUEVO
-  itemsPerPage: number; // NUEVO
-  onPageChange: (page: number) => void; // NUEVO
-  onItemsPerPageChange: (size: number) => void; // NUEVO
+  totalItems: number; 
+  currentPage: number; 
+  itemsPerPage: number; 
+  onPageChange: (page: number) => void; 
+  onItemsPerPageChange: (size: number) => void; 
   colorTheme?: 'red' | 'emerald' | 'blue' | 'amber' | 'purple';
   categoriasDisponibles?: string[]; 
   cuentasDisponibles?: string[];
   onGlobalSearch?: (term: string) => void;
   onEdit?: (row: any) => void;   
   onDelete?: (id: string) => void; 
+  onMarcarCompletado?: (id: string) => void;
 };
 
 const formatearFechaLarga = (fechaStr: string) => {
@@ -32,12 +34,11 @@ const formatearFechaLarga = (fechaStr: string) => {
   return `${parseInt(dia)} ${meses[parseInt(mes) - 1]} ${anio}`;
 };
 
-export default function TransactionTable({ columns, data, colorTheme, categoriasDisponibles, cuentasDisponibles, onGlobalSearch, onEdit, onDelete }: TableProps) {
+export default function TransactionTable({ columns, data, colorTheme, categoriasDisponibles, cuentasDisponibles, onGlobalSearch, onEdit, onDelete, onMarcarCompletado, totalItems, currentPage, itemsPerPage, onPageChange, onItemsPerPageChange }: TableProps) {
+  const { usarPendientes } = useConfig();
   const [searchTerm, setSearchTerm] = useState('');
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'fecha', direction: 'desc' });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(15);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -109,10 +110,10 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
     return processedData.reduce((acc, curr) => acc + Number(curr.cantidad), 0);
   }, [processedData]);
 
-  const totalPages = Math.max(1, Math.ceil(processedData.length / itemsPerPage));
-  if (currentPage > totalPages && totalPages > 0) setCurrentPage(1); 
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  if (currentPage > totalPages && totalPages > 0) onPageChange(1); 
   
-  const paginatedData = processedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const paginatedData = processedData.slice(0, itemsPerPage);
 
   const handleSort = (key: string) => {
     setSortConfig(current => ({
@@ -132,11 +133,11 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
             type="text"
             placeholder="Buscar en cualquier campo..."
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => { setSearchTerm(e.target.value); onPageChange(1); }}
             className="w-full pl-10 pr-10 py-2 bg-slate-100 dark:bg-slate-800/80 border-transparent rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:border-red-300 dark:focus:border-red-700 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/30 transition-all dark:text-white outline-none"
           />
           {searchTerm && (
-            <button onClick={() => { setSearchTerm(''); setCurrentPage(1); }} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+            <button onClick={() => { setSearchTerm(''); onPageChange(1); }} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
               <X size={16} />
             </button>
           )}
@@ -148,7 +149,7 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
               <Filter size={14} className="absolute left-3 text-slate-400" />
               <select
                 value={filtros[col.key] || ''}
-                onChange={(e) => { setFiltros({ ...filtros, [col.key]: e.target.value }); setCurrentPage(1); }}
+                onChange={(e) => { setFiltros({ ...filtros, [col.key]: e.target.value }); onPageChange(1); }}
                 className="w-full sm:w-auto pl-8 pr-8 py-2 bg-slate-100 dark:bg-slate-800/80 border-transparent rounded-lg text-sm appearance-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/30 transition-all dark:text-white outline-none"
               >
                 <option value="">Todas las {col.label.toLowerCase()}</option>
@@ -166,6 +167,7 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
         <table className="w-full text-left border-collapse min-w-[700px]">
           <thead>
             <tr className={headerBg}>
+              {usarPendientes && <th className="p-4 w-12 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">Est.</th>}
               {columns.map((col) => (
                 <th key={col.key} className={`p-4 text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider ${col.sortable ? 'cursor-pointer hover:text-slate-900 dark:hover:text-white' : ''}`} onClick={() => col.sortable && handleSort(col.key)}>
                   <div className="flex items-center gap-1">
@@ -174,45 +176,50 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
                   </div>
                 </th>
               ))}
-              {(onEdit || onDelete) && <th className="p-4 text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider text-right">Acciones</th>}
+              {(onEdit || onDelete || onMarcarCompletado) && <th className="p-4 text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider text-right">Acciones</th>}
             </tr>
           </thead>
           
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
             {paginatedData.length > 0 ? (
               paginatedData.map((row, index) => (
-                // Añadida opacidad si está pendiente para diferenciar la fila visualmente también
-                <tr key={row.id || index} className={`transition-colors ${rowBg} ${row.pendiente ? 'opacity-85' : ''}`}>
+                <tr key={row.id || index} className={`transition-colors ${rowBg} ${usarPendientes && row.pendiente ? 'opacity-85' : ''}`}>
+                  
+                  {usarPendientes && (
+                    <td className="p-4 w-12 text-center">
+                      {row.pendiente ? (
+                        <Clock size={18} className="text-amber-500 mx-auto drop-shadow-sm"  />
+                      ) : (
+                        <CheckCircle2 size={18} className="text-emerald-500 mx-auto drop-shadow-sm"  />
+                      )}
+                    </td>
+                  )}
+
                   {columns.map((col) => (
                     <td key={col.key} className="p-4 text-sm text-slate-700 dark:text-slate-300">
-                      
-                      {/* --- AQUI SE RENDERIZA EL BADGE DE PENDIENTE --- */}
                       {col.key === 'fecha' ? (
-                        <div className="flex items-center gap-2">
-                          <span>{formatearFechaLarga(row[col.key])}</span>
-                          {row.pendiente && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 uppercase tracking-wider">
-                              <Clock size={10} /> Pendiente
-                            </span>
-                          )}
-                        </div>
+                        <span>{formatearFechaLarga(row[col.key])}</span>
                       ) : col.key === 'cantidad' ? (
                         <span className="font-semibold text-slate-900 dark:text-white">
                           {formatearMoneda(Number(row[col.key]))} €
                         </span>
                       ) : row[col.key]}
-                      
                     </td>
                   ))}
-                  {(onEdit || onDelete) && (
+                  {(onEdit || onDelete || onMarcarCompletado) && (
                     <td className="p-4 text-right space-x-2 whitespace-nowrap">
+                      {usarPendientes && row.pendiente && onMarcarCompletado && (
+                        <button onClick={() => onMarcarCompletado(row.id)} className="p-1.5 inline-flex text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition-colors" title="Marcar como completado">
+                          <Check size={16} strokeWidth={3} />
+                        </button>
+                      )}
                       {onEdit && (
-                        <button onClick={() => onEdit(row)} className="p-1.5 inline-flex text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors">
+                        <button onClick={() => onEdit(row)} className="p-1.5 inline-flex text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors" title="Editar">
                           <Pencil size={16} />
                         </button>
                       )}
                       {onDelete && (
-                        <button onClick={() => onDelete(row.id)} className="p-1.5 inline-flex text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors">
+                        <button onClick={() => onDelete(row.id)} className="p-1.5 inline-flex text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors" title="Eliminar">
                           <Trash2 size={16} />
                         </button>
                       )}
@@ -222,13 +229,14 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length + 1} className="p-8 text-center text-slate-500 dark:text-slate-400">No se encontraron resultados</td>
+                <td colSpan={columns.length + (usarPendientes ? 2 : 1)} className="p-8 text-center text-slate-500 dark:text-slate-400">No se encontraron resultados</td>
               </tr>
             )}
           </tbody>
 
           <tfoot>
             <tr className={`font-bold ${footerBg}`}>
+              {usarPendientes && <td></td>}
               {columns.map((col, index) => (
                 <td key={`total-${col.key}`} className="p-4 text-sm whitespace-nowrap">
                   {col.key === 'cantidad' ? (
@@ -242,7 +250,7 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
                   )}
                 </td>
               ))}
-              {(onEdit || onDelete) && <td></td>}
+              {(onEdit || onDelete || onMarcarCompletado) && <td></td>}
             </tr>
           </tfoot>
         </table>
@@ -254,20 +262,20 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
             <span>Filas:</span>
             <select
               value={itemsPerPage}
-              onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+              onChange={(e) => { onItemsPerPageChange(Number(e.target.value)); }}
               className="bg-slate-100 dark:bg-slate-800/80 border-transparent rounded px-2 py-1 outline-none focus:ring-2 focus:ring-red-100 cursor-pointer"
             >
               {[10, 15, 25, 50].map(size => <option key={size} value={size}>{size}</option>)}
             </select>
           </div>
           <div className="text-center sm:text-left hidden sm:block">
-            Mostrando {paginatedData.length === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, processedData.length)} de {processedData.length} resultados
+            Mostrando {totalItems === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} resultados
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronLeft size={20} /></button>
-          <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800/80 rounded-md font-medium">{currentPage} / {totalPages}</span>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronRight size={20} /></button>
+          <button onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronLeft size={20} /></button>
+          <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800/80 rounded-md font-medium">{currentPage} / {totalPages || 1}</span>
+          <button onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || totalPages === 0} className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronRight size={20} /></button>
         </div>
       </div>
     </div>

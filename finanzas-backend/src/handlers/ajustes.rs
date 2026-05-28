@@ -40,6 +40,11 @@ pub struct UpsertCuentaDTO {
     pub tipos_operacion: Vec<String>, // Array de checkboxes que nos manda React
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct ConfiguracionDTO {
+    pub usar_pendientes: bool,
+}
+
 // ==========================================
 // MANEJADORES DE CATEGORÍAS (Sin cambios)
 // ==========================================
@@ -142,4 +147,21 @@ pub async fn eliminar_cuenta_logico(State(pool): State<PgPool>, Path(id): Path<S
 pub async fn reactivar_cuenta(State(pool): State<PgPool>, Path(id): Path<String>) -> impl IntoResponse {
     let result = sqlx::query("UPDATE cuentas SET activo = true WHERE id = $1::uuid").bind(&id).execute(&pool).await;
     match result { Ok(_) => (StatusCode::OK, "OK").into_response(), Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() }
+}
+
+// CONFIGURACIÓN
+pub async fn obtener_configuracion(State(pool): State<PgPool>) -> impl IntoResponse {
+    let row = sqlx::query!("SELECT usar_pendientes FROM configuracion WHERE id = 1").fetch_one(&pool).await;
+    match row {
+        Ok(r) => Json(ConfiguracionDTO { usar_pendientes: r.usar_pendientes }).into_response(),
+        Err(_) => Json(ConfiguracionDTO { usar_pendientes: false }).into_response(),
+    }
+}
+
+pub async fn actualizar_configuracion(State(pool): State<PgPool>, Json(payload): Json<ConfiguracionDTO>) -> impl IntoResponse {
+    let result = sqlx::query!("UPDATE configuracion SET usar_pendientes = $1 WHERE id = 1", payload.usar_pendientes).execute(&pool).await;
+    match result {
+        Ok(_) => (StatusCode::OK, "OK").into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+    }
 }
