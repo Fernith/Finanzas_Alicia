@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, TrendingDown, Wallet, Clock } from 'lucide-react';
+import { TrendingDown, Wallet, Clock } from 'lucide-react';
 import { PieChart, Pie, Tooltip, ResponsiveContainer } from 'recharts';
 import MonthYearSelector from '../components/general/SelectorMesAno';
 import TransactionTable, { type Column } from '../components/general/TransactionTable';
