@@ -249,15 +249,10 @@ export default function Inversiones() {
 
       <ModalTransaccion 
         isOpen={modalAbierto} 
-        onClose={() => {
-          setModalAbierto(false);
-          setInversionSeleccionadaEditar(null);
-        }} 
+        onClose={() => { setModalAbierto(false); setInversionSeleccionadaEditar(null); }} 
         onSuccess={() => { cargarInversionesPaginadas(); cargarInversionesGlobales(); }}
-        categorias={categoriasActivas} 
-        cuentas={cuentasActivas} 
         transaccionAEditar={inversionSeleccionadaEditar}
-        tipo="INVERSION"
+        tipoInicial="INVERSION" 
       />
 
       <ModalConfirmacion 

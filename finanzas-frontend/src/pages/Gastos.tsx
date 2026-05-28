@@ -85,6 +85,16 @@ export default function Gastos() {
   useEffect(() => { cargarGastosPaginados(); }, [cargarGastosPaginados]);
   useEffect(() => { cargarGastosGlobales(); }, [cargarGastosGlobales]);
 
+  // Pon esto debajo de tus otros useEffect()
+  useEffect(() => {
+    const handleUpdate = () => {
+      cargarGastosPaginados();
+      cargarGastosGlobales();
+    };
+    window.addEventListener('actualizarTransacciones', handleUpdate);
+    return () => window.removeEventListener('actualizarTransacciones', handleUpdate);
+  }, [cargarGastosPaginados, cargarGastosGlobales]);
+
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
 
   const handleEliminarGasto = (id: string) => {
@@ -157,7 +167,7 @@ export default function Gastos() {
 
       <div className={`grid grid-cols-1 ${usarPendientes ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
         
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300">
+        <div className="bg-white dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300">
           <div className="p-4 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex-shrink-0">
             <Wallet size={40} />
           </div>
@@ -197,12 +207,7 @@ export default function Gastos() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-bold text-slate-800 dark:text-white">Listado de Transacciones</h2>
               
-              <button 
-                onClick={() => { setGastoSeleccionadoEditar(null); setModalAbierto(true); }}
-                className="flex items-center justify-center w-full sm:w-auto bg-gradient-to-r bg-red-400 dark:bg-red-900 text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg shadow-red-500/30 active:scale-95 transition-all border border-red-400/20"
-              >
-                <Plus size={20} className="mr-2" /> Agregar Gasto
-              </button>
+              
             </div>
 
             <div className="flex w-full overflow-x-auto pb-1 sm:pb-0">
@@ -254,15 +259,10 @@ export default function Gastos() {
 
       <ModalTransaccion 
         isOpen={modalAbierto} 
-        onClose={() => {
-          setModalAbierto(false);
-          setGastoSeleccionadoEditar(null);
-        }} 
+        onClose={() => { setModalAbierto(false); setGastoSeleccionadoEditar(null); }} 
         onSuccess={() => { cargarGastosPaginados(); cargarGastosGlobales(); }}
-        categorias={categoriasActivas} 
-        cuentas={cuentasActivas} 
         transaccionAEditar={gastoSeleccionadoEditar}
-        tipo="GASTO"
+        tipoInicial="GASTO" 
       />
 
     <ModalConfirmacion 

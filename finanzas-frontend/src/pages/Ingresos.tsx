@@ -82,6 +82,16 @@ export default function Ingresos() {
   useEffect(() => { cargarIngresosPaginados(); }, [cargarIngresosPaginados]);
   useEffect(() => { cargarIngresosGlobales(); }, [cargarIngresosGlobales]);
 
+  // Pon esto debajo de tus otros useEffect()
+  useEffect(() => {
+    const handleUpdate = () => {
+      cargarIngresosPaginados(); // O cargarIngresosPaginados() / cargarInversionesPaginadas()
+      cargarIngresosGlobales(); // O cargarIngresosGlobales() / cargarInversionesGlobales()
+    };
+    window.addEventListener('actualizarTransacciones', handleUpdate);
+    return () => window.removeEventListener('actualizarTransacciones', handleUpdate);
+  }, [cargarIngresosPaginados, cargarIngresosGlobales]);
+
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
 
   const handleEliminarIngreso = (id: string) => {
@@ -193,12 +203,7 @@ export default function Ingresos() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-bold text-slate-800 dark:text-white">Listado de Transacciones</h2>
               
-              <button 
-                onClick={() => { setIngresoSeleccionadoEditar(null); setModalAbierto(true); }}
-                className="flex items-center justify-center w-full sm:w-auto bg-gradient-to-r bg-emerald-500 dark:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-500/30 active:scale-95 transition-all border border-emerald-400/20"
-              >
-                <Plus size={20} className="mr-2" /> Añadir Ingreso
-              </button>
+              
             </div>
 
             <div className="flex w-full overflow-x-auto pb-1 sm:pb-0">
@@ -250,15 +255,10 @@ export default function Ingresos() {
 
       <ModalTransaccion 
         isOpen={modalAbierto} 
-        onClose={() => {
-          setModalAbierto(false);
-          setIngresoSeleccionadoEditar(null);
-        }} 
+        onClose={() => { setModalAbierto(false); setIngresoSeleccionadoEditar(null); }} 
         onSuccess={() => { cargarIngresosPaginados(); cargarIngresosGlobales(); }}
-        categorias={categoriasActivas} 
-        cuentas={cuentasActivas} 
         transaccionAEditar={ingresoSeleccionadoEditar}
-        tipo="INGRESO"
+        tipoInicial="INGRESO" 
       />
 
       <ModalConfirmacion 
