@@ -91,7 +91,7 @@ pub async fn obtener_ingresos(
 }
 
 pub async fn obtener_categorias_ingresos(State(pool): State<PgPool>) -> impl IntoResponse {
-    let rows = sqlx::query_as!(MaestroDTO, r#"SELECT id::text as "id!", nombre, color, activo FROM categorias WHERE tipo_operacion_id = 'INGRESO' ORDER BY nombre"#).fetch_all(&pool).await;
+    let rows = sqlx::query_as!(MaestroDTO, r#"SELECT id::text as "id!", nombre, color, activo FROM categorias WHERE tipo_operacion_id = 'INGRESO' ORDER BY orden ASC, nombre ASC"#).fetch_all(&pool).await;
     match rows { Ok(cats) => Json(cats).into_response(), Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response() }
 }
 
@@ -102,7 +102,7 @@ pub async fn obtener_cuentas_ingresos(State(pool): State<PgPool>) -> impl IntoRe
            FROM cuentas c
            JOIN cuentas_tipos_operacion ct ON c.id = ct.cuenta_id
            WHERE ct.tipo_operacion_id = 'INGRESO'
-           ORDER BY c.nombre"#
+           ORDER BY c.orden ASC, c.nombre ASC"#
     ).fetch_all(&pool).await;
     match rows { Ok(cuentas) => Json(cuentas).into_response(), Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() }
 }

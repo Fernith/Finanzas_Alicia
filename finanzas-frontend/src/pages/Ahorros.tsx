@@ -75,7 +75,7 @@ export default function Ahorros() {
           <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mt-1">Dinero libre para usar</span>
         </div>
 
-        <Link to="/ahorros/inversiones" className="block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:ring-2 hover:ring-amber-500 hover:shadow-md transition-all group">
+        <Link to="/inversiones" className="block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:ring-2 hover:ring-amber-500 hover:shadow-md transition-all group">
           <div className="flex justify-between items-start">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><ArrowRightLeft size={14}/> Capital Invertido</p>
             <div className="p-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-amber-500 group-hover:bg-amber-50 dark:group-hover:bg-amber-900/30 transition-colors"><ArrowRightLeft size={16}/></div>

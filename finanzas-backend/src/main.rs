@@ -80,6 +80,10 @@ async fn main() {
         // CONFIGURACION
         .route("/api/configuracion", axum::routing::get(handlers::ajustes::obtener_configuracion).put(handlers::ajustes::actualizar_configuracion))
 
+        // NUEVAS RUTAS DE REORDENAR (Añade estas 2 líneas):
+        .route("/api/ajustes/categorias/reordenar", axum::routing::put(handlers::ajustes::reordenar_categorias))
+        .route("/api/ajustes/cuentas/reordenar", axum::routing::put(handlers::ajustes::reordenar_cuentas))
+
 
         .fallback_service(frontend)
 

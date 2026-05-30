@@ -48,7 +48,7 @@ pub struct MaestroDTO {
 pub async fn obtener_categorias_inversiones(State(pool): State<PgPool>) -> impl IntoResponse {
     let rows = sqlx::query_as!(
         MaestroDTO,
-        r#"SELECT id::text as "id!", nombre as "nombre!", color as "color!", activo as "activo!" FROM categorias WHERE tipo_operacion_id = 'AHORRO' ORDER BY nombre"#
+        r#"SELECT id::text as "id!", nombre as "nombre!", color as "color!", activo as "activo!" FROM categorias WHERE tipo_operacion_id = 'INVERSION' ORDER BY orden ASC, nombre ASC"#
     ).fetch_all(&pool).await;
     match rows { Ok(cats) => Json(cats).into_response(), Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() }
 }
@@ -59,8 +59,8 @@ pub async fn obtener_cuentas_inversiones(State(pool): State<PgPool>) -> impl Int
         r#"SELECT c.id::text as "id!", c.nombre as "nombre!", c.color as "color!", c.activo as "activo!" 
            FROM cuentas c
            JOIN cuentas_tipos_operacion ct ON c.id = ct.cuenta_id
-           WHERE ct.tipo_operacion_id = 'AHORRO'
-           ORDER BY c.nombre"#
+           WHERE ct.tipo_operacion_id = 'INVERSION'
+           ORDER BY c.orden ASC, c.nombre ASC"#
     ).fetch_all(&pool).await;
     match rows { Ok(cuentas) => Json(cuentas).into_response(), Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() }
 }
@@ -80,7 +80,7 @@ pub async fn listar_inversiones(
             COALESCE(o.pendiente, false)::bool as "pendiente!", COUNT(*) OVER() as "total_filas!"
         FROM operaciones o
         JOIN categorias c ON o.categoria_id = c.id JOIN cuentas cu ON o.cuenta_id = cu.id
-        WHERE o.tipo_operacion_id = 'AHORRO' 
+        WHERE o.tipo_operacion_id = 'INVERSION' 
         ORDER BY o.fecha DESC LIMIT $1 OFFSET $2
         "#,
         limit, offset
@@ -106,7 +106,7 @@ pub async fn listar_inversiones(
 pub async fn crear_inversion(State(pool): State<PgPool>, Json(payload): Json<UpsertInversionDTO>) -> impl IntoResponse {
     let result = sqlx::query(
         "INSERT INTO operaciones (tipo_operacion_id, fecha, cantidad, categoria_id, cuenta_id, descripcion, pendiente) 
-         VALUES ('AHORRO', $1::date, $2::float, $3::uuid, $4::uuid, $5, $6::boolean)"
+         VALUES ('INVERSION', $1::date, $2::float, $3::uuid, $4::uuid, $5, $6::boolean)"
     )
     .bind(&payload.fecha).bind(payload.cantidad).bind(&payload.categoria_id).bind(&payload.cuenta_id).bind(&payload.descripcion).bind(payload.pendiente)
     .execute(&pool).await;
@@ -138,7 +138,7 @@ pub async fn modificar_inversion(State(pool): State<PgPool>, Path(id): Path<Stri
 
 pub async fn eliminar_inversion(State(pool): State<PgPool>, Path(id): Path<String>) -> impl IntoResponse {
     // AHORA HACE UN BORRADO FÍSICO REAL
-    let result = sqlx::query("DELETE FROM operaciones WHERE id = $1::uuid AND tipo_operacion_id = 'AHORRO'")
+    let result = sqlx::query("DELETE FROM operaciones WHERE id = $1::uuid AND tipo_operacion_id = 'INVERSION'")
         .bind(&id).execute(&pool).await;
     match result { Ok(_) => (StatusCode::OK, "OK").into_response(), Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() }
 }

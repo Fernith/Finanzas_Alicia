@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id::text as \"id!\", nombre, color, activo FROM categorias WHERE tipo_operacion_id = 'INGRESO' ORDER BY nombre",
+  "query": "SELECT id::text as \"id!\", nombre, color, activo FROM categorias WHERE tipo_operacion_id = 'GASTO' ORDER BY orden ASC, nombre ASC",
   "describe": {
     "columns": [
       {
@@ -34,5 +34,5 @@
       true
     ]
   },
-  "hash": "2ebe91a419cb89fefe2cffb88e19910584314148fc2da6365cff0d1697244868"
+  "hash": "22f6991a5d6892c918c45fbb371bb80761e9c79a14cc25b71c24206c32dd601b"
 }

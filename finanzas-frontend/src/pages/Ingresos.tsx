@@ -15,18 +15,13 @@ export default function Ingresos() {
   const [mesActual, setMesActual] = useState(fechaActual.getMonth() + 1);
   const [añoActual, setAñoActual] = useState(fechaActual.getFullYear());
   const [busquedaGlobal, setBusquedaGlobal] = useState('');
+  
   const [modalAbierto, setModalAbierto] = useState(false);
   const [ingresoSeleccionadoEditar, setIngresoSeleccionadoEditar] = useState<any>(null);
 
   const [ingresos, setIngresos] = useState<any[]>([]);
-  const [ingresosGlobales, setIngresosGlobales] = useState<any[]>([]);
-
   const [categorias, setCategorias] = useState<any[]>([]);
   const [cuentas, setCuentas] = useState<any[]>([]);
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(15);
-  const [totalItems, setTotalItems] = useState(0);
 
   const columnasIngresos: Column[] = [
     { key: 'fecha', label: 'Fecha', sortable: true },
@@ -38,74 +33,46 @@ export default function Ingresos() {
   ];
 
   const totalRealMes = useMemo(() => {
-    return ingresosGlobales
+    return ingresos
       .filter(i => usarPendientes ? !i.pendiente : true)
       .reduce((acc, curr) => acc + Number(curr.cantidad), 0);
-  }, [ingresosGlobales, usarPendientes]);
+  }, [ingresos, usarPendientes]);
 
   const totalConPendientes = useMemo(() => {
-    return ingresosGlobales.reduce((acc, curr) => acc + Number(curr.cantidad), 0);
-  }, [ingresosGlobales]);
-
-  useEffect(() => { setCurrentPage(1); }, [mesActual, añoActual, busquedaGlobal]);
+    return ingresos.reduce((acc, curr) => acc + Number(curr.cantidad), 0);
+  }, [ingresos]);
 
   useEffect(() => {
     fetch('/api/categorias/ingresos').then(res => res.json()).then(data => setCategorias(data));
     fetch('/api/cuentas/ingresos').then(res => res.json()).then(data => setCuentas(data));
   }, []);
 
-  const cargarIngresosPaginados = useCallback(async () => {
+  const cargarIngresos = useCallback(async () => {
     try {
-      const offset = (currentPage - 1) * itemsPerPage;
-      const res = await fetch(`/api/ingresos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}&limit=${itemsPerPage}&offset=${offset}`);
-      
-      const count = res.headers.get('X-Total-Count');
-      setTotalItems(Number(count) || 0);
-      
+      const res = await fetch(`/api/ingresos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}&limit=100000&offset=0`);
       const data = await res.json();
       setIngresos(data);
     } catch {
       setIngresos([]);
     }
-  }, [mesActual, añoActual, busquedaGlobal, currentPage, itemsPerPage]);
-
-  const cargarIngresosGlobales = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/ingresos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}&limit=100000&offset=0`);
-      const data = await res.json();
-      setIngresosGlobales(data);
-    } catch {
-      setIngresosGlobales([]);
-    }
   }, [mesActual, añoActual, busquedaGlobal]);
 
-  useEffect(() => { cargarIngresosPaginados(); }, [cargarIngresosPaginados]);
-  useEffect(() => { cargarIngresosGlobales(); }, [cargarIngresosGlobales]);
+  useEffect(() => { cargarIngresos(); }, [cargarIngresos]);
 
-  // Pon esto debajo de tus otros useEffect()
   useEffect(() => {
-    const handleUpdate = () => {
-      cargarIngresosPaginados(); // O cargarIngresosPaginados() / cargarInversionesPaginadas()
-      cargarIngresosGlobales(); // O cargarIngresosGlobales() / cargarInversionesGlobales()
-    };
+    const handleUpdate = () => cargarIngresos();
     window.addEventListener('actualizarTransacciones', handleUpdate);
     return () => window.removeEventListener('actualizarTransacciones', handleUpdate);
-  }, [cargarIngresosPaginados, cargarIngresosGlobales]);
+  }, [cargarIngresos]);
 
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
-
-  const handleEliminarIngreso = (id: string) => {
-    setIdAEliminar(id); 
-  };
 
   const confirmarEliminacion = async () => {
     if (!idAEliminar) return;
     try {
       const res = await fetch(`/api/ingresos/${idAEliminar}`, { method: 'DELETE' });
-      if (res.ok) {
-        cargarIngresosPaginados();
-        cargarIngresosGlobales();
-      } else alert('No se pudo eliminar el ingreso.');
+      if (res.ok) cargarIngresos();
+      else alert('No se pudo eliminar el ingreso.');
     } catch {
       alert('Error de conexión.');
     } finally {
@@ -121,10 +88,8 @@ export default function Ingresos() {
   const handleMarcarCompletado = async (id: string) => {
     try {
       const res = await fetch(`/api/ingresos/${id}/completar`, { method: 'PATCH' });
-      if (res.ok) {
-        cargarIngresosPaginados();
-        cargarIngresosGlobales();
-      } else alert('Error al actualizar el estado.');
+      if (res.ok) cargarIngresos();
+      else alert('Error al actualizar el estado.');
     } catch {
       alert('Error de conexión.');
     }
@@ -132,7 +97,7 @@ export default function Ingresos() {
 
   const datosGrafico = useMemo(() => {
     const totales: Record<string, number> = {};
-    ingresosGlobales.forEach(ingreso => {
+    ingresos.forEach(ingreso => {
       totales[ingreso.categoria] = (totales[ingreso.categoria] || 0) + Number(ingreso.cantidad);
     });
     return Object.entries(totales)
@@ -141,7 +106,7 @@ export default function Ingresos() {
         return { name, value, fill: catBBDD?.color || '#94a3b8' };
       })
       .sort((a, b) => b.value - a.value);
-  }, [ingresosGlobales, categorias]);
+  }, [ingresos, categorias]);
 
   const categoriasActivas = useMemo(() => categorias.filter(c => c.activo !== false), [categorias]);
   const cuentasActivas = useMemo(() => cuentas.filter(c => c.activo !== false), [cuentas]);
@@ -149,7 +114,7 @@ export default function Ingresos() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-slate-200 dark:border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-slate-200 dark:border-amber-600/40 pb-6">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-gradient-to-br from-emerald-100 to-teal-200 dark:from-emerald-900/40 dark:to-teal-900/20 rounded-2xl shadow-sm border border-emerald-200/50 dark:border-emerald-800/50">
             <TrendingUp className="text-emerald-600 dark:text-emerald-400" size={32} />
@@ -162,8 +127,7 @@ export default function Ingresos() {
       </div>
 
       <div className={`grid grid-cols-1 ${usarPendientes ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
-        
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300">
+        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-600/40 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300">
           <div className="p-4 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
             <Wallet size={40} />
           </div>
@@ -178,7 +142,7 @@ export default function Ingresos() {
         </div>
 
         {usarPendientes && (
-          <div className="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300 relative overflow-hidden">
+          <div className="bg-white dark:bg-neutral-900 border border-amber-200 dark:border-amber-600/40 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-amber-50 dark:bg-amber-900/10 rounded-bl-full -z-10"></div>
             <div className="p-4 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">
               <Clock size={40} />
@@ -193,19 +157,15 @@ export default function Ingresos() {
             </div>
           </div>
         )}
-
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+        <div className="lg:col-span-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-600/40 rounded-2xl shadow-sm flex flex-col overflow-hidden">
           
-          <div className="p-5 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col gap-5">
+          <div className="p-5 border-b border-slate-200 dark:border-amber-600/40 shrink-0 bg-slate-50/50 dark:bg-neutral-900/50 flex flex-col gap-5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-bold text-slate-800 dark:text-white">Listado de Transacciones</h2>
-              
-              
             </div>
-
             <div className="flex w-full overflow-x-auto pb-1 sm:pb-0">
               <MonthYearSelector mesSeleccionado={mesActual} añoSeleccionado={añoActual} onMesChange={setMesActual} onAñoChange={setAñoActual} />
             </div>
@@ -213,17 +173,20 @@ export default function Ingresos() {
 
           <div className="w-full">
             <TransactionTable 
-              columns={columnasIngresos} data={ingresos} colorTheme="emerald" 
-              categoriasDisponibles={categoriasActivas.map(c => c.nombre)} cuentasDisponibles={cuentasActivas.map(c => c.nombre)}
-              onGlobalSearch={setBusquedaGlobal} onEdit={handleAbrirEdicion} onDelete={handleEliminarIngreso}
+              columns={columnasIngresos} 
+              data={ingresos} 
+              colorTheme="emerald" 
+              categoriasDisponibles={categoriasActivas.map(c => c.nombre)} 
+              cuentasDisponibles={cuentasActivas.map(c => c.nombre)}
+              onGlobalSearch={setBusquedaGlobal} 
+              onEdit={handleAbrirEdicion} 
+              onDelete={setIdAEliminar}
               onMarcarCompletado={handleMarcarCompletado}
-              totalItems={totalItems} currentPage={currentPage} itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage} onItemsPerPageChange={s => { setItemsPerPage(s); setCurrentPage(1); }}
             />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-5 flex flex-col sticky top-24">
+        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-600/40 rounded-xl shadow-sm p-5 flex flex-col sticky top-24">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Resumen por Categoría</h2>
           {datosGrafico.length > 0 ? (
             <>
@@ -231,7 +194,7 @@ export default function Ingresos() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={datosGrafico} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none" label={({ percent }) => percent !== undefined ? `${(percent * 100).toFixed(0)}%` : ''} labelLine={false} />
-                    <Tooltip formatter={(value: any) => `${Number(value).toFixed(2)} €`} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Tooltip formatter={(value: any) => `${Number(value).toFixed(2)} €`} contentStyle={{ borderRadius: '8px', border: 'none', backgroundColor: '#171717', borderColor: '#404040', color: '#fff', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -256,9 +219,9 @@ export default function Ingresos() {
       <ModalTransaccion 
         isOpen={modalAbierto} 
         onClose={() => { setModalAbierto(false); setIngresoSeleccionadoEditar(null); }} 
-        onSuccess={() => { cargarIngresosPaginados(); cargarIngresosGlobales(); }}
+        onSuccess={cargarIngresos}
         transaccionAEditar={ingresoSeleccionadoEditar}
-        tipoInicial="INGRESO" 
+        tipoInicial="INGRESO"
       />
 
       <ModalConfirmacion 

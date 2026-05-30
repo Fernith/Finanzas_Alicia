@@ -96,7 +96,7 @@ export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target,
               <select value={tipoOperacionId} onChange={(e) => setTipoOperacionId(e.target.value)} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white outline-none focus:ring-2 focus:ring-blue-100">
                 <option value="GASTO">Gastos</option>
                 <option value="INGRESO">Ingresos</option>
-                <option value="AHORRO">Ahorros</option>
+                <option value="INVERSION">Inversiones</option>
               </select>
             </div>
           )}
@@ -106,7 +106,7 @@ export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target,
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2"><CheckSquare size={16} /> Disponible para:</label>
               <div className="flex gap-2 flex-wrap">
-                {['GASTO', 'INGRESO', 'AHORRO'].map(tipo => (
+                {['GASTO', 'INGRESO', 'INVERSION'].map(tipo => (
                   <label key={tipo} className={`flex items-center gap-2 px-3 py-2 border rounded-xl cursor-pointer text-xs font-semibold transition-all ${tiposCuenta.includes(tipo) ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-white border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-700'}`}>
                     <input type="checkbox" checked={tiposCuenta.includes(tipo)} onChange={() => toggleTipoCuenta(tipo)} className="hidden" />
                     {tipo}

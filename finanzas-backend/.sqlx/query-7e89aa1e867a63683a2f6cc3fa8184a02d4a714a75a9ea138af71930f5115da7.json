@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT c.id::text as \"id!\", c.nombre as \"nombre!\", c.color as \"color!\", c.activo as \"activo!\" \n           FROM cuentas c\n           JOIN cuentas_tipos_operacion ct ON c.id = ct.cuenta_id\n           WHERE ct.tipo_operacion_id = 'AHORRO'\n           ORDER BY c.nombre",
+  "query": "SELECT id::text as \"id!\", nombre as \"nombre!\", color as \"color!\", activo as \"activo!\" FROM categorias WHERE tipo_operacion_id = 'INVERSION' ORDER BY orden ASC, nombre ASC",
   "describe": {
     "columns": [
       {
@@ -34,5 +34,5 @@
       true
     ]
   },
-  "hash": "077b7a3c47e22d929fddb5fcc06406d5987dabfdae21d8ecafcc8329b504ff6c"
+  "hash": "7e89aa1e867a63683a2f6cc3fa8184a02d4a714a75a9ea138af71930f5115da7"
 }

@@ -14,6 +14,7 @@ pub struct CategoriaItemDTO {
     pub tipo_operacion_id: String,
     pub color: String,
     pub activo: bool,
+    pub orden: i32, // <-- CAMPO AÑADIDO
 }
 
 #[derive(Deserialize)]
@@ -21,23 +22,26 @@ pub struct UpsertCategoriaDTO {
     pub nombre: String,
     pub tipo_operacion_id: String,
     pub color: String,
+    pub orden: Option<i32>,
 }
 
-// --- DTOs CUENTAS (Múltiples tipos) ---
+// --- DTOs CUENTAS ---
 #[derive(Serialize)]
 pub struct CuentaItemDTO {
     pub id: String,
     pub nombre: String,
     pub color: String,
     pub activo: bool,
-    pub tipos_operacion: Vec<String>, // Array con los tipos
+    pub orden: i32, // <-- CAMPO AÑADIDO
+    pub tipos_operacion: Vec<String>,
 }
 
 #[derive(Deserialize)]
 pub struct UpsertCuentaDTO {
     pub nombre: String,
     pub color: String,
-    pub tipos_operacion: Vec<String>, // Array de checkboxes que nos manda React
+    pub orden: Option<i32>, // <-- CAMPO AÑADIDO
+    pub tipos_operacion: Vec<String>, 
 }
 
 #[derive(Serialize, Deserialize)]
@@ -45,17 +49,62 @@ pub struct ConfiguracionDTO {
     pub usar_pendientes: bool,
 }
 
+#[derive(Deserialize)]
+pub struct ReordenarDTO {
+    pub id: String,
+    pub orden: i32,
+}
+
 // ==========================================
 // MANEJADORES DE CATEGORÍAS (Sin cambios)
 // ==========================================
 pub async fn listar_categorias(State(pool): State<PgPool>) -> impl IntoResponse {
-    let rows = sqlx::query_as!(CategoriaItemDTO, r#"SELECT id::text as "id!", nombre, tipo_operacion_id as "tipo_operacion_id!", color as "color!", activo as "activo!" FROM categorias ORDER BY tipo_operacion_id DESC, nombre ASC"#).fetch_all(&pool).await;
-    match rows { Ok(items) => Json(items).into_response(), Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() }
+    let rows = sqlx::query_as!(
+        CategoriaItemDTO, 
+        r#"SELECT 
+            id::text as "id!", 
+            nombre as "nombre!", 
+            tipo_operacion_id as "tipo_operacion_id!", 
+            color as "color!", 
+            activo as "activo!", 
+            orden as "orden!" 
+           FROM categorias 
+           ORDER BY orden ASC, nombre ASC"#
+    ).fetch_all(&pool).await;
+
+    match rows { 
+        Ok(items) => Json(items).into_response(), 
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() 
+    }
 }
+
 pub async fn crear_categoria(State(pool): State<PgPool>, Json(payload): Json<UpsertCategoriaDTO>) -> impl IntoResponse {
-    let result = sqlx::query("INSERT INTO categorias (nombre, tipo_operacion_id, color, activo) VALUES ($1, $2, $3, true)")
-        .bind(&payload.nombre).bind(&payload.tipo_operacion_id).bind(&payload.color).execute(&pool).await;
-    match result { Ok(_) => (StatusCode::CREATED, "OK").into_response(), Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() }
+    // 1. Buscamos el máximo y usamos 'match' para asegurar que extraemos un i32 puro
+    let max_orden_row: Result<Option<i32>, _> = sqlx::query_scalar("SELECT MAX(orden) FROM categorias WHERE tipo_operacion_id = $1")
+        .bind(&payload.tipo_operacion_id)
+        .fetch_one(&pool)
+        .await;
+        
+    let max_orden: i32 = match max_orden_row {
+        Ok(Some(val)) => val,
+        _ => 0, // Si falla o es nulo, empezamos en 0
+    };
+    
+    // 2. Calculamos el orden final de forma segura
+    let orden_final = payload.orden.unwrap_or(max_orden + 1);
+
+    // 3. Insertamos
+    let result = sqlx::query("INSERT INTO categorias (nombre, tipo_operacion_id, color, activo, orden) VALUES ($1, $2, $3, true, $4)")
+        .bind(&payload.nombre)
+        .bind(&payload.tipo_operacion_id)
+        .bind(&payload.color)
+        .bind(orden_final)
+        .execute(&pool).await;
+
+    match result { 
+        Ok(_) => (StatusCode::CREATED, "OK").into_response(), 
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() 
+    }
 }
 pub async fn modificar_categoria(State(pool): State<PgPool>, Path(id): Path<String>, Json(payload): Json<UpsertCategoriaDTO>) -> impl IntoResponse {
     let result = sqlx::query("UPDATE categorias SET nombre = $1, tipo_operacion_id = $2, color = $3 WHERE id = $4::uuid")
@@ -82,29 +131,46 @@ pub async fn listar_cuentas(State(pool): State<PgPool>) -> impl IntoResponse {
             c.nombre as "nombre!", 
             c.color as "color!", 
             c.activo as "activo!", 
+            c.orden as "orden!",
             COALESCE(array_agg(ct.tipo_operacion_id) FILTER (WHERE ct.tipo_operacion_id IS NOT NULL), ARRAY[]::text[]) as "tipos_operacion!"
            FROM cuentas c
            LEFT JOIN cuentas_tipos_operacion ct ON c.id = ct.cuenta_id
            GROUP BY c.id
-           ORDER BY c.nombre ASC"#
+           ORDER BY c.orden ASC, c.nombre ASC"#
     ).fetch_all(&pool).await;
-    match rows { Ok(items) => Json(items).into_response(), Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() }
+
+    match rows { 
+        Ok(items) => Json(items).into_response(), 
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() 
+    }
 }
 
 pub async fn crear_cuenta(State(pool): State<PgPool>, Json(payload): Json<UpsertCuentaDTO>) -> impl IntoResponse {
     let mut tx = match pool.begin().await { Ok(t) => t, Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Error tx").into_response() };
     
-    // Pedimos a Postgres que nos devuelva el ID ya convertido a texto
-    let result = sqlx::query("INSERT INTO cuentas (nombre, color, activo) VALUES ($1, $2, true) RETURNING id::text")
+    // 1. Buscamos el máximo de forma segura
+    let max_orden_row: Result<Option<i32>, _> = sqlx::query_scalar("SELECT MAX(orden) FROM cuentas")
+        .fetch_one(&mut *tx)
+        .await;
+        
+    let max_orden: i32 = match max_orden_row {
+        Ok(Some(val)) => val,
+        _ => 0,
+    };
+    
+    // 2. Calculamos el orden final
+    let orden_final = payload.orden.unwrap_or(max_orden + 1);
+    
+    // 3. Insertamos la cuenta
+    let result = sqlx::query("INSERT INTO cuentas (nombre, color, activo, orden) VALUES ($1, $2, true, $3) RETURNING id::text")
         .bind(&payload.nombre)
         .bind(&payload.color)
+        .bind(orden_final)
         .fetch_one(&mut *tx)
         .await;
         
     if let Ok(row) = result {
-        // Como pedimos id::text, ahora podemos guardarlo en un String normal de Rust
         let cuenta_id: String = row.get("id");
-        
         for tipo in payload.tipos_operacion {
             let _ = sqlx::query("INSERT INTO cuentas_tipos_operacion (cuenta_id, tipo_operacion_id) VALUES ($1::uuid, $2)")
                 .bind(&cuenta_id)
@@ -164,4 +230,35 @@ pub async fn actualizar_configuracion(State(pool): State<PgPool>, Json(payload):
         Ok(_) => (StatusCode::OK, "OK").into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
     }
+}
+
+// DE AMBOS
+pub async fn reordenar_categorias(State(pool): State<PgPool>, Json(payload): Json<Vec<ReordenarDTO>>) -> impl IntoResponse {
+    let mut tx = match pool.begin().await { Ok(t) => t, Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Error tx").into_response() };
+    
+    for item in payload {
+        let _ = sqlx::query("UPDATE categorias SET orden = $1 WHERE id = $2::uuid")
+            .bind(item.orden)
+            .bind(&item.id)
+            .execute(&mut *tx)
+            .await;
+    }
+    
+    let _ = tx.commit().await;
+    (StatusCode::OK, "OK").into_response()
+}
+
+pub async fn reordenar_cuentas(State(pool): State<PgPool>, Json(payload): Json<Vec<ReordenarDTO>>) -> impl IntoResponse {
+    let mut tx = match pool.begin().await { Ok(t) => t, Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Error tx").into_response() };
+    
+    for item in payload {
+        let _ = sqlx::query("UPDATE cuentas SET orden = $1 WHERE id = $2::uuid")
+            .bind(item.orden)
+            .bind(&item.id)
+            .execute(&mut *tx)
+            .await;
+    }
+    
+    let _ = tx.commit().await;
+    (StatusCode::OK, "OK").into_response()
 }

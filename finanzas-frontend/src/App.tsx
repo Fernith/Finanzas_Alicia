@@ -12,6 +12,7 @@ import Ingresos from './pages/Ingresos';
 import Inversiones from './pages/Inversiones';
 import Ahorros from './pages/Ahorros';
 import Ajustes from './pages/Ajustes';
+import Liquidez from './pages/Liquidez';
 
 function App() {
   const [modalGlobalAbierto, setModalGlobalAbierto] = useState(false);
@@ -19,11 +20,10 @@ function App() {
   return (
     <ConfigProvider>
       <Router>
-        {/* FONDO NEGRO PURO APLICADO (dark:bg-black) */}
         <div className="min-h-screen bg-slate-50 dark:bg-black transition-colors duration-300 relative">
           <Navbar />
           
-          {/* pb-24 para que el contenido no quede oculto detrás del botón flotante */}
+          
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full pb-24">
             <Routes>
               <Route path="/" element={<Balance />} />
@@ -32,6 +32,7 @@ function App() {
               <Route path="/inversiones" element={<Inversiones />} />
               <Route path="/ahorros" element={<Ahorros />} />
               <Route path="/ajustes" element={<Ajustes />} />
+              <Route path="/ahorros/liquidez" element={<Liquidez />} />
             </Routes>
           </main>
 

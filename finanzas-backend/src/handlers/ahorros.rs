@@ -61,7 +61,7 @@ pub struct MaestroDTO {
 // --- 1. RESUMEN GLOBAL ---
 pub async fn obtener_resumen(State(pool): State<PgPool>) -> Result<Json<ResumenAhorrosDTO>, AppError> {
     let dinero_invertido: f64 = sqlx::query_scalar(
-        "SELECT COALESCE(SUM(cantidad), 0)::float FROM operaciones WHERE tipo_operacion_id = 'AHORRO' AND pendiente = false"
+        "SELECT COALESCE(SUM(cantidad), 0)::float FROM operaciones WHERE tipo_operacion_id = 'INVERSION' AND pendiente = false"
     ).fetch_one(&pool).await.unwrap_or(0.0);
 
     let dinero_liquido: f64 = sqlx::query_scalar!(

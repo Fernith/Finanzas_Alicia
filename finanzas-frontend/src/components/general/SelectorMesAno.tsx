@@ -27,7 +27,7 @@ export default function SelectorMesAno({ mesSeleccionado, añoSeleccionado, onMe
       <select 
         value={mesSeleccionado}
         onChange={(e) => onMesChange(Number(e.target.value))}
-        className="w-[55%] sm:w-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-900 transition-shadow cursor-pointer"
+        className="w-[55%] sm:w-auto bg-white dark:bg-neutral-800 border border-slate-200 dark:border-transparent text-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-900 transition-shadow cursor-pointer"
       >
         {meses.map((mes, i) => (
           <option key={mes} value={i + 1}>{mes}</option>
@@ -38,7 +38,7 @@ export default function SelectorMesAno({ mesSeleccionado, añoSeleccionado, onMe
       <select 
         value={añoSeleccionado}
         onChange={(e) => onAñoChange(Number(e.target.value))}
-        className="w-[30%] sm:w-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-900 text-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-900 transition-shadow cursor-pointer"
+        className="w-[30%] sm:w-auto bg-white dark:bg-neutral-800 border border-slate-200 dark:border-transparent text-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-900 transition-shadow cursor-pointer"
       >
         {años.map(año => (
           <option key={año} value={año}>{año}</option>
@@ -50,7 +50,7 @@ export default function SelectorMesAno({ mesSeleccionado, añoSeleccionado, onMe
         type="button"
         onClick={irAlPresente}
         title="Volver a la fecha actual"
-        className="w-[15%] sm:w-auto p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 rounded-lg transition-colors flex items-center justify-center shrink-0 border border-slate-200/40 dark:border-slate-900/40 active:scale-95"
+        className="w-[15%] sm:w-auto p-2 bg-slate-100 hover:bg-slate-200 dark:bg-neutral-800 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 rounded-lg transition-colors flex items-center justify-center shrink-0 border border-slate-200/40 dark:border-transparent active:scale-95"
       >
         <CalendarDays size={18} />
       </button>

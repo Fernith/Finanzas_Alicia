@@ -15,19 +15,14 @@ export default function Gastos() {
   const [mesActual, setMesActual] = useState(fechaActual.getMonth() + 1);
   const [añoActual, setAñoActual] = useState(fechaActual.getFullYear());
   const [busquedaGlobal, setBusquedaGlobal] = useState('');
+  
   const [modalAbierto, setModalAbierto] = useState(false);
   const [gastoSeleccionadoEditar, setGastoSeleccionadoEditar] = useState<any>(null);
 
-  // Dos estados: uno para la tabla (paginado) y otro para sumas/gráficos (global)
+  // ESTADO ÚNICO DE DATOS (Sin paginación en el padre)
   const [gastos, setGastos] = useState<any[]>([]);
-  const [gastosGlobales, setGastosGlobales] = useState<any[]>([]);
-  
   const [categorias, setCategorias] = useState<any[]>([]);
   const [cuentas, setCuentas] = useState<any[]>([]);
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(15);
-  const [totalItems, setTotalItems] = useState(0);
 
   const columnasGastos: Column[] = [
     { key: 'fecha', label: 'Fecha', sortable: true },
@@ -37,78 +32,50 @@ export default function Gastos() {
     { key: 'descripcion', label: 'Descripción' }
   ];
 
-  // Las sumas ahora se hacen sobre gastosGlobales
+  // Cálculo sobre el listado total
   const totalRealMes = useMemo(() => {
-    return gastosGlobales
+    return gastos
       .filter(g => usarPendientes ? !g.pendiente : true)
       .reduce((acc, curr) => acc + Number(curr.cantidad), 0);
-  }, [gastosGlobales, usarPendientes]);
+  }, [gastos, usarPendientes]);
 
   const totalConPendientes = useMemo(() => {
-    return gastosGlobales.reduce((acc, curr) => acc + Number(curr.cantidad), 0);
-  }, [gastosGlobales]);
-
-  useEffect(() => { setCurrentPage(1); }, [mesActual, añoActual, busquedaGlobal]);
+    return gastos.reduce((acc, curr) => acc + Number(curr.cantidad), 0);
+  }, [gastos]);
 
   useEffect(() => {
     fetch('/api/categorias/gastos').then(res => res.json()).then(data => setCategorias(data));
     fetch('/api/cuentas/gastos').then(res => res.json()).then(data => setCuentas(data));
   }, []);
 
-  // Petición paginada para la tabla
-  const cargarGastosPaginados = useCallback(async () => {
+  // Carga global (limitamos muy alto para evitar paginación en BD)
+  const cargarGastos = useCallback(async () => {
     try {
-      const offset = (currentPage - 1) * itemsPerPage;
-      const res = await fetch(`/api/gastos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}&limit=${itemsPerPage}&offset=${offset}`);
-      
-      const count = res.headers.get('X-Total-Count');
-      setTotalItems(Number(count) || 0);
-      
+      const res = await fetch(`/api/gastos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}&limit=100000&offset=0`);
       const data = await res.json();
       setGastos(data);
     } catch {
       setGastos([]);
     }
-  }, [mesActual, añoActual, busquedaGlobal, currentPage, itemsPerPage]);
-
-  // Petición global sin paginar para cálculos (límite altísimo)
-  const cargarGastosGlobales = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/gastos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}&limit=100000&offset=0`);
-      const data = await res.json();
-      setGastosGlobales(data);
-    } catch {
-      setGastosGlobales([]);
-    }
   }, [mesActual, añoActual, busquedaGlobal]);
 
-  useEffect(() => { cargarGastosPaginados(); }, [cargarGastosPaginados]);
-  useEffect(() => { cargarGastosGlobales(); }, [cargarGastosGlobales]);
+  useEffect(() => { cargarGastos(); }, [cargarGastos]);
 
-  // Pon esto debajo de tus otros useEffect()
+  // Evento global desde el FAB
   useEffect(() => {
-    const handleUpdate = () => {
-      cargarGastosPaginados();
-      cargarGastosGlobales();
-    };
+    const handleUpdate = () => cargarGastos();
     window.addEventListener('actualizarTransacciones', handleUpdate);
     return () => window.removeEventListener('actualizarTransacciones', handleUpdate);
-  }, [cargarGastosPaginados, cargarGastosGlobales]);
+  }, [cargarGastos]);
 
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
-
-  const handleEliminarGasto = (id: string) => {
-    setIdAEliminar(id); 
-  };
 
   const confirmarEliminacion = async () => {
     if (!idAEliminar) return;
     try {
       const res = await fetch(`/api/gastos/${idAEliminar}`, { method: 'DELETE' });
-      if (res.ok) {
-        cargarGastosPaginados();
-        cargarGastosGlobales();
-      } else alert('No se pudo eliminar el gasto.');
+      if (res.ok) cargarGastos();
+      else alert('No se pudo eliminar el gasto.');
     } catch {
       alert('Error de conexión.');
     } finally {
@@ -124,19 +91,16 @@ export default function Gastos() {
   const handleMarcarCompletado = async (id: string) => {
     try {
       const res = await fetch(`/api/gastos/${id}/completar`, { method: 'PATCH' });
-      if (res.ok) {
-        cargarGastosPaginados();
-        cargarGastosGlobales();
-      } else alert('Error al actualizar el estado.');
+      if (res.ok) cargarGastos();
+      else alert('Error al actualizar el estado.');
     } catch {
       alert('Error de conexión.');
     }
   };
 
-  // El gráfico también se alimenta de gastosGlobales
   const datosGrafico = useMemo(() => {
     const totales: Record<string, number> = {};
-    gastosGlobales.forEach(gasto => {
+    gastos.forEach(gasto => {
       totales[gasto.categoria] = (totales[gasto.categoria] || 0) + Number(gasto.cantidad);
     });
     return Object.entries(totales)
@@ -145,7 +109,7 @@ export default function Gastos() {
         return { name, value, fill: catBBDD?.color || '#94a3b8' };
       })
       .sort((a, b) => b.value - a.value);
-  }, [gastosGlobales, categorias]);
+  }, [gastos, categorias]);
 
   const categoriasActivas = useMemo(() => categorias.filter(c => c.activo !== false), [categorias]);
   const cuentasActivas = useMemo(() => cuentas.filter(c => c.activo !== false), [cuentas]);
@@ -153,7 +117,7 @@ export default function Gastos() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-slate-200 dark:border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-slate-200 dark:border-amber-600/40 pb-6">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-gradient-to-br from-red-100 to-rose-200 dark:from-red-900/40 dark:to-rose-900/20 rounded-2xl shadow-sm border border-red-200/50 dark:border-red-800/50">
             <TrendingDown className="text-red-600 dark:text-red-400" size={32} />
@@ -166,8 +130,7 @@ export default function Gastos() {
       </div>
 
       <div className={`grid grid-cols-1 ${usarPendientes ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
-        
-        <div className="bg-white dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300">
+        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-600/40 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300">
           <div className="p-4 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex-shrink-0">
             <Wallet size={40} />
           </div>
@@ -182,7 +145,7 @@ export default function Gastos() {
         </div>
 
         {usarPendientes && (
-          <div className="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300 relative overflow-hidden">
+          <div className="bg-white dark:bg-neutral-900 border border-amber-200 dark:border-amber-600/40 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-amber-50 dark:bg-amber-900/10 rounded-bl-full -z-10"></div>
             <div className="p-4 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">
               <Clock size={40} />
@@ -197,19 +160,15 @@ export default function Gastos() {
             </div>
           </div>
         )}
-
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+        <div className="lg:col-span-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-600/40 rounded-2xl shadow-sm flex flex-col overflow-hidden">
           
-          <div className="p-5 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col gap-5">
+          <div className="p-5 border-b border-slate-200 dark:border-amber-600/40 shrink-0 bg-slate-50/50 dark:bg-neutral-900/50 flex flex-col gap-5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-bold text-slate-800 dark:text-white">Listado de Transacciones</h2>
-              
-              
             </div>
-
             <div className="flex w-full overflow-x-auto pb-1 sm:pb-0">
               <MonthYearSelector mesSeleccionado={mesActual} añoSeleccionado={añoActual} onMesChange={setMesActual} onAñoChange={setAñoActual} />
             </div>
@@ -217,17 +176,20 @@ export default function Gastos() {
 
           <div className="w-full">
             <TransactionTable 
-              columns={columnasGastos} data={gastos} colorTheme="red" 
-              categoriasDisponibles={categoriasActivas.map(c => c.nombre)} cuentasDisponibles={cuentasActivas.map(c => c.nombre)}
-              onGlobalSearch={setBusquedaGlobal} onEdit={handleAbrirEdicion} onDelete={handleEliminarGasto}
+              columns={columnasGastos} 
+              data={gastos} 
+              colorTheme="red" 
+              categoriasDisponibles={categoriasActivas.map(c => c.nombre)} 
+              cuentasDisponibles={cuentasActivas.map(c => c.nombre)}
+              onGlobalSearch={setBusquedaGlobal} 
+              onEdit={handleAbrirEdicion} 
+              onDelete={setIdAEliminar}
               onMarcarCompletado={handleMarcarCompletado}
-              totalItems={totalItems} currentPage={currentPage} itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage} onItemsPerPageChange={s => { setItemsPerPage(s); setCurrentPage(1); }}
             />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-5 flex flex-col sticky top-24">
+        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-600/40 rounded-xl shadow-sm p-5 flex flex-col sticky top-24">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Resumen por Categoría</h2>
           {datosGrafico.length > 0 ? (
             <>
@@ -235,7 +197,7 @@ export default function Gastos() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={datosGrafico} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none" label={({ percent }) => percent !== undefined ? `${(percent * 100).toFixed(0)}%` : ''} labelLine={false} />
-                    <Tooltip formatter={(value: any) => `${Number(value).toFixed(2)} €`} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Tooltip formatter={(value: any) => `${Number(value).toFixed(2)} €`} contentStyle={{ borderRadius: '8px', border: 'none', backgroundColor: '#171717', borderColor: '#404040', color: '#fff', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -260,9 +222,9 @@ export default function Gastos() {
       <ModalTransaccion 
         isOpen={modalAbierto} 
         onClose={() => { setModalAbierto(false); setGastoSeleccionadoEditar(null); }} 
-        onSuccess={() => { cargarGastosPaginados(); cargarGastosGlobales(); }}
+        onSuccess={cargarGastos}
         transaccionAEditar={gastoSeleccionadoEditar}
-        tipoInicial="GASTO" 
+        tipoInicial="GASTO"
       />
 
     <ModalConfirmacion 
