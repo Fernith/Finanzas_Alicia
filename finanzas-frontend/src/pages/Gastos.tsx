@@ -1,28 +1,27 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState } from 'react';
 import { TrendingDown, Wallet, Clock } from 'lucide-react';
-import { PieChart, Pie, Tooltip, ResponsiveContainer } from 'recharts';
-import MonthYearSelector from '../components/general/SelectorMesAno';
-import TransactionTable, { type Column } from '../components/general/TransactionTable';
-import { formatearMoneda } from '../utils/formatters';
+import MonthYearSelector from '../components/operaciones/SelectorMesAno';
+import TransactionTable, { type Column } from '../components/operaciones/TransactionTable';
 import ModalConfirmacion from '../components/general/ModalConfirmacion';
-import ModalTransaccion from '../components/general/ModalTransaccion';
+import ModalTransaccion from '../components/operaciones/ModalTransaccion';
+import GraficoResumen from '../components/operaciones/GraficoResumen';
+import { formatearMoneda } from '../utils/formatters';
 import { useConfig } from '../context/ConfigContext';
+import { useTransacciones } from '../hooks/useTransacciones';
 
 export default function Gastos() {
   const { usarPendientes } = useConfig();
   
-  const fechaActual = new Date();
-  const [mesActual, setMesActual] = useState(fechaActual.getMonth() + 1);
-  const [añoActual, setAñoActual] = useState(fechaActual.getFullYear());
-  const [busquedaGlobal, setBusquedaGlobal] = useState('');
-  
-  const [modalAbierto, setModalAbierto] = useState(false);
-  const [gastoSeleccionadoEditar, setGastoSeleccionadoEditar] = useState<any>(null);
+  // Magia: Todo el estado y la lógica vienen importados de una sola línea
+  const {
+    mesActual, setMesActual, añoActual, setAñoActual, busquedaGlobal, setBusquedaGlobal,
+    transacciones, categoriasActivas, cuentasActivas, datosGrafico,
+    totalRealMes, totalConPendientes, cargarTransacciones, eliminarTransaccion, marcarCompletado
+  } = useTransacciones('gastos');
 
-  // ESTADO ÚNICO DE DATOS (Sin paginación en el padre)
-  const [gastos, setGastos] = useState<any[]>([]);
-  const [categorias, setCategorias] = useState<any[]>([]);
-  const [cuentas, setCuentas] = useState<any[]>([]);
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [gastoAEditar, setGastoAEditar] = useState<any>(null);
+  const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
 
   const columnasGastos: Column[] = [
     { key: 'fecha', label: 'Fecha', sortable: true },
@@ -32,91 +31,8 @@ export default function Gastos() {
     { key: 'descripcion', label: 'Descripción' }
   ];
 
-  // Cálculo sobre el listado total
-  const totalRealMes = useMemo(() => {
-    return gastos
-      .filter(g => usarPendientes ? !g.pendiente : true)
-      .reduce((acc, curr) => acc + Number(curr.cantidad), 0);
-  }, [gastos, usarPendientes]);
-
-  const totalConPendientes = useMemo(() => {
-    return gastos.reduce((acc, curr) => acc + Number(curr.cantidad), 0);
-  }, [gastos]);
-
-  useEffect(() => {
-    fetch('/api/categorias/gastos').then(res => res.json()).then(data => setCategorias(data));
-    fetch('/api/cuentas/gastos').then(res => res.json()).then(data => setCuentas(data));
-  }, []);
-
-  // Carga global (limitamos muy alto para evitar paginación en BD)
-  const cargarGastos = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/gastos?mes=${mesActual}&anio=${añoActual}&buscar=${busquedaGlobal}&limit=100000&offset=0`);
-      const data = await res.json();
-      setGastos(data);
-    } catch {
-      setGastos([]);
-    }
-  }, [mesActual, añoActual, busquedaGlobal]);
-
-  useEffect(() => { cargarGastos(); }, [cargarGastos]);
-
-  // Evento global desde el FAB
-  useEffect(() => {
-    const handleUpdate = () => cargarGastos();
-    window.addEventListener('actualizarTransacciones', handleUpdate);
-    return () => window.removeEventListener('actualizarTransacciones', handleUpdate);
-  }, [cargarGastos]);
-
-  const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
-
-  const confirmarEliminacion = async () => {
-    if (!idAEliminar) return;
-    try {
-      const res = await fetch(`/api/gastos/${idAEliminar}`, { method: 'DELETE' });
-      if (res.ok) cargarGastos();
-      else alert('No se pudo eliminar el gasto.');
-    } catch {
-      alert('Error de conexión.');
-    } finally {
-      setIdAEliminar(null);
-    }
-  };
-
-  const handleAbrirEdicion = (gasto: any) => {
-    setGastoSeleccionadoEditar(gasto);
-    setModalAbierto(true);
-  };
-
-  const handleMarcarCompletado = async (id: string) => {
-    try {
-      const res = await fetch(`/api/gastos/${id}/completar`, { method: 'PATCH' });
-      if (res.ok) cargarGastos();
-      else alert('Error al actualizar el estado.');
-    } catch {
-      alert('Error de conexión.');
-    }
-  };
-
-  const datosGrafico = useMemo(() => {
-    const totales: Record<string, number> = {};
-    gastos.forEach(gasto => {
-      totales[gasto.categoria] = (totales[gasto.categoria] || 0) + Number(gasto.cantidad);
-    });
-    return Object.entries(totales)
-      .map(([name, value]) => {
-        const catBBDD = categorias.find(c => c.nombre === name);
-        return { name, value, fill: catBBDD?.color || '#94a3b8' };
-      })
-      .sort((a, b) => b.value - a.value);
-  }, [gastos, categorias]);
-
-  const categoriasActivas = useMemo(() => categorias.filter(c => c.activo !== false), [categorias]);
-  const cuentasActivas = useMemo(() => cuentas.filter(c => c.activo !== false), [cuentas]);
-
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-slate-200 dark:border-red-500/30 pb-6">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-gradient-to-br from-red-100 to-rose-200 dark:from-red-900/40 dark:to-rose-900/20 rounded-2xl shadow-sm border border-red-200/50 dark:border-red-800/50">
@@ -130,7 +46,7 @@ export default function Gastos() {
       </div>
 
       <div className={`grid grid-cols-1 ${usarPendientes ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
-        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-red-500/30 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300">
+        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-red-500/30 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6">
           <div className="p-4 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex-shrink-0">
             <Wallet size={40} />
           </div>
@@ -138,14 +54,14 @@ export default function Gastos() {
             <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] text-center sm:text-left">
               {busquedaGlobal ? 'Búsqueda Real' : (usarPendientes ? 'Gasto Real Realizado' : 'Total gastado este mes')}
             </p>
-            <p className="text-4xl sm:text-5xl font-black text-red-600 dark:text-red-800 mt-1 tabular-nums text-center sm:text-left">
+            <p className="text-4xl sm:text-5xl font-black text-red-600 dark:text-red-500 mt-1 tabular-nums text-center sm:text-left">
               {formatearMoneda(totalRealMes)} <span className="text-xl sm:text-2xl font-bold ml-1">€</span>
             </p>
           </div>
         </div>
 
         {usarPendientes && (
-          <div className="bg-white dark:bg-neutral-900 border border-amber-200 dark:border-red-500/30 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300 relative overflow-hidden">
+          <div className="bg-white dark:bg-neutral-900 border border-amber-200 dark:border-amber-500/30 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-amber-50 dark:bg-amber-900/10 rounded-bl-full -z-10"></div>
             <div className="p-4 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">
               <Clock size={40} />
@@ -164,11 +80,8 @@ export default function Gastos() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-red-500/30 rounded-2xl shadow-sm flex flex-col overflow-hidden">
-          
-          <div className="p-5 border-b border-slate-200 dark:border-red-500/30 shrink-0 bg-slate-50/50 dark:bg-neutral-900/50 flex flex-col gap-5">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h2 className="text-lg font-bold text-slate-800 dark:text-white">Listado de Transacciones</h2>
-            </div>
+          <div className="p-5 border-b border-slate-200 dark:border-red-500/30 bg-slate-50/50 dark:bg-neutral-900/50 flex flex-col gap-5">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Listado de Transacciones</h2>
             <div className="flex w-full overflow-x-auto pb-1 sm:pb-0">
               <MonthYearSelector mesSeleccionado={mesActual} añoSeleccionado={añoActual} onMesChange={setMesActual} onAñoChange={setAñoActual} />
             </div>
@@ -177,62 +90,35 @@ export default function Gastos() {
           <div className="w-full">
             <TransactionTable 
               columns={columnasGastos} 
-              data={gastos} 
+              data={transacciones} 
               colorTheme="red" 
               categoriasDisponibles={categoriasActivas.map(c => c.nombre)} 
               cuentasDisponibles={cuentasActivas.map(c => c.nombre)}
               onGlobalSearch={setBusquedaGlobal} 
-              onEdit={handleAbrirEdicion} 
+              onEdit={(t) => { setGastoAEditar(t); setModalAbierto(true); }} 
               onDelete={setIdAEliminar}
-              onMarcarCompletado={handleMarcarCompletado}
+              onMarcarCompletado={marcarCompletado}
             />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-red-500/30 rounded-xl shadow-sm p-5 flex flex-col sticky top-24">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Resumen por Categoría</h2>
-          {datosGrafico.length > 0 ? (
-            <>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={datosGrafico} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none" label={({ percent }) => percent !== undefined ? `${(percent * 100).toFixed(0)}%` : ''} labelLine={false} />
-                    <Tooltip formatter={(value: any) => `${Number(value).toFixed(2)} €`} contentStyle={{ borderRadius: '8px', border: 'none', backgroundColor: '#171717', borderColor: '#404040', color: '#fff', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-4 space-y-3 flex-grow">
-                {datosGrafico.map((item) => (
-                  <div key={item.name} className="flex justify-between items-center text-sm">
-                    <div className="flex items-center">
-                      <span className="w-3 h-3 rounded-full mr-3 shadow-sm" style={{ backgroundColor: item.fill }}></span>
-                      <span className="text-slate-600 dark:text-slate-300 font-medium">{item.name}</span>
-                    </div>
-                    <span className="text-slate-900 dark:text-white font-bold">{item.value.toFixed(2)} €</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-             <div className="flex items-center justify-center h-64 text-slate-400">No hay gastos en este mes.</div>
-          )}
-        </div>
+        <GraficoResumen 
+          titulo="Resumen por Categoría" 
+          datosGrafico={datosGrafico} 
+          colorBorderTheme="dark:border-red-500/30" 
+          mensajeVacio="No hay gastos en este mes." 
+        />
       </div>
 
       <ModalTransaccion 
-        isOpen={modalAbierto} 
-        onClose={() => { setModalAbierto(false); setGastoSeleccionadoEditar(null); }} 
-        onSuccess={cargarGastos}
-        transaccionAEditar={gastoSeleccionadoEditar}
-        tipoInicial="GASTO"
+        isOpen={modalAbierto} onClose={() => { setModalAbierto(false); setGastoAEditar(null); }} 
+        onSuccess={cargarTransacciones} transaccionAEditar={gastoAEditar} tipoInicial="GASTO"
       />
 
-    <ModalConfirmacion 
-      isOpen={!!idAEliminar} 
-      onClose={() => setIdAEliminar(null)} 
-      onConfirm={confirmarEliminacion}
-      mensaje="¿Estás seguro de que deseas eliminar este gasto permanentemente?"
-    />
-  </div> 
+      <ModalConfirmacion 
+        isOpen={!!idAEliminar} onClose={() => setIdAEliminar(null)} onConfirm={() => { if(idAEliminar) eliminarTransaccion(idAEliminar); setIdAEliminar(null); }}
+        mensaje="¿Estás seguro de que deseas eliminar este gasto permanentemente?"
+      />
+    </div> 
   );
 }

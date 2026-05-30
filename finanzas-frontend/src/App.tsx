@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import Navbar from './components/general/Navbar';
-import ModalTransaccion from './components/general/ModalTransaccion';
+import ModalTransaccion from './components/operaciones/ModalTransaccion';
 import { ConfigProvider } from './context/ConfigContext';
 
 // Importa aquí tus páginas

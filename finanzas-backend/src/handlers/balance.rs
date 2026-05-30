@@ -4,21 +4,7 @@ use axum::{
     http::StatusCode,
 };
 use sqlx::PgPool;
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize)]
-pub struct FiltroAnio {
-    pub anio: i32,
-}
-
-#[derive(Serialize)]
-pub struct OperacionAnualDTO {
-    pub fecha: String,
-    pub cantidad: f64,
-    pub tipo_operacion_id: String,
-    pub categoria: String,
-    pub color: String,
-}
+use crate::dtos::balance::*;
 
 pub async fn obtener_balance_anual(
     State(pool): State<PgPool>,

@@ -1,51 +1,11 @@
 use axum::{
-    extract::{Path, State, Query}, // <-- AÑADIDO: Query
+    extract::{Path, State, Query},
     Json, response::IntoResponse,
-    http::{StatusCode, HeaderMap}, // <-- AÑADIDO: HeaderMap
+    http::{StatusCode, HeaderMap},
 };
 use sqlx::PgPool;
-use serde::{Deserialize, Serialize};
 use crate::error::AppError;
-
-#[derive(Serialize)]
-pub struct IngresoDTO {
-    pub id: String,
-    pub fecha: String,
-    pub cantidad: f64,
-    pub categoria: String,
-    pub cuenta: String,
-    pub descripcion: Option<String>,
-    pub campo_extra_ingreso: Option<String>, 
-    pub pendiente: bool, // <-- NUEVO CAMPO
-}
-
-#[derive(Serialize)]
-pub struct MaestroDTO {
-    pub id: String,
-    pub nombre: String,
-    pub color: Option<String>,
-    pub activo: Option<bool>,
-}
-
-#[derive(Deserialize)]
-pub struct FiltroFecha {
-    pub mes: i32,
-    pub anio: i32,
-    pub buscar: Option<String>,
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
-}
-
-#[derive(Deserialize)]
-pub struct NuevoIngresoDTO {
-    pub fecha: String,
-    pub cantidad: f64,
-    pub categoria_id: String,
-    pub cuenta_id: String,
-    pub descripcion: Option<String>,
-    pub campo_extra_ingreso: Option<String>, 
-    pub pendiente: bool,
-}
+use crate::dtos::operaciones::*;
 
 pub async fn obtener_ingresos(
     State(pool): State<PgPool>,

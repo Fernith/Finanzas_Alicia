@@ -3,57 +3,8 @@ use axum::{
     Json, response::IntoResponse,
     http::StatusCode,
 };
-use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Row};
-
-// --- DTOs CATEGORÍAS ---
-#[derive(Serialize, sqlx::FromRow)]
-pub struct CategoriaItemDTO {
-    pub id: String,
-    pub nombre: String,
-    pub tipo_operacion_id: String,
-    pub color: String,
-    pub activo: bool,
-    pub orden: i32, // <-- CAMPO AÑADIDO
-}
-
-#[derive(Deserialize)]
-pub struct UpsertCategoriaDTO {
-    pub nombre: String,
-    pub tipo_operacion_id: String,
-    pub color: String,
-    pub orden: Option<i32>,
-}
-
-// --- DTOs CUENTAS ---
-#[derive(Serialize)]
-pub struct CuentaItemDTO {
-    pub id: String,
-    pub nombre: String,
-    pub color: String,
-    pub activo: bool,
-    pub orden: i32, // <-- CAMPO AÑADIDO
-    pub tipos_operacion: Vec<String>,
-}
-
-#[derive(Deserialize)]
-pub struct UpsertCuentaDTO {
-    pub nombre: String,
-    pub color: String,
-    pub orden: Option<i32>, // <-- CAMPO AÑADIDO
-    pub tipos_operacion: Vec<String>, 
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ConfiguracionDTO {
-    pub usar_pendientes: bool,
-}
-
-#[derive(Deserialize)]
-pub struct ReordenarDTO {
-    pub id: String,
-    pub orden: i32,
-}
+use crate::dtos::ajustes::*;
 
 // ==========================================
 // MANEJADORES DE CATEGORÍAS (Sin cambios)

@@ -1,6 +1,7 @@
 // Le decimos a Rust que busque una carpeta o archivo llamado "handlers"
 mod handlers;
 mod error;
+mod dtos;
 
 use axum::{routing::get, Router};
 use sqlx::postgres::PgPoolOptions;

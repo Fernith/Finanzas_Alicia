@@ -14,8 +14,7 @@ export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target,
   const [tipoOperacionId, setTipoOperacionId] = useState('GASTO');
   const [color, setColor] = useState('#3b82f6');
   
-  // NUEVO: Array para los checkboxes de la cuenta
-  const [tiposCuenta, setTiposCuenta] = useState<string[]>(['GASTO', 'INGRESO']); 
+  const [tiposCuenta, setTiposCuenta] = useState<string[]>(['GASTO', 'INGRESO', 'INVERSION']); 
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
@@ -29,7 +28,7 @@ export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target,
         setNombre('');
         setColor('#3b82f6');
         setTipoOperacionId('GASTO');
-        setTiposCuenta(['GASTO', 'INGRESO']);
+        setTiposCuenta(['GASTO', 'INGRESO', 'INVERSION']);
       }
     }
   }, [isOpen, itemAEditar, target]);

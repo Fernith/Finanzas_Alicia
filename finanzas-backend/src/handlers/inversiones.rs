@@ -1,53 +1,15 @@
 use axum::{
-    extract::{Path, State, Query}, // <-- AÑADIDO: Query
+    extract::{Path, State, Query},
     Json, response::IntoResponse,
-    http::{StatusCode, HeaderMap}, // <-- AÑADIDO: HeaderMap
+    http::{StatusCode, HeaderMap},
 };
 use sqlx::PgPool;
-use serde::{Deserialize, Serialize};
 use crate::error::AppError;
-
-#[derive(Deserialize)]
-pub struct FiltroPaginacion {
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
-}
-
-#[derive(Serialize)]
-pub struct InversionDTO {
-    pub id: String,
-    pub fecha: String,
-    pub cantidad: f64,
-    pub categoria_id: String,
-    pub categoria: String,
-    pub cuenta_id: String,
-    pub cuenta: String,
-    pub descripcion: Option<String>, // <-- Cambio de "notas" a "descripcion"
-    pub color: String,
-    pub pendiente: bool, // <-- NUEVO CAMPO
-}
-
-#[derive(Deserialize)]
-pub struct UpsertInversionDTO {
-    pub fecha: String,
-    pub cantidad: f64,
-    pub categoria_id: String,
-    pub cuenta_id: String,
-    pub descripcion: Option<String>,
-    pub pendiente: bool,
-}
-
-#[derive(Serialize, sqlx::FromRow)]
-pub struct MaestroDTO {
-    pub id: String,
-    pub nombre: String,
-    pub color: String,
-    pub activo: bool,
-}
+use crate::dtos::operaciones::*;
 
 pub async fn obtener_categorias_inversiones(State(pool): State<PgPool>) -> impl IntoResponse {
     let rows = sqlx::query_as!(
-        MaestroDTO,
+        MaestroEstrictoDTO,
         r#"SELECT id::text as "id!", nombre as "nombre!", color as "color!", activo as "activo!" FROM categorias WHERE tipo_operacion_id = 'INVERSION' ORDER BY orden ASC, nombre ASC"#
     ).fetch_all(&pool).await;
     match rows { Ok(cats) => Json(cats).into_response(), Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() }
@@ -55,7 +17,7 @@ pub async fn obtener_categorias_inversiones(State(pool): State<PgPool>) -> impl 
 
 pub async fn obtener_cuentas_inversiones(State(pool): State<PgPool>) -> impl IntoResponse {
     let rows = sqlx::query_as!(
-        MaestroDTO,
+        MaestroEstrictoDTO,
         r#"SELECT c.id::text as "id!", c.nombre as "nombre!", c.color as "color!", c.activo as "activo!" 
            FROM cuentas c
            JOIN cuentas_tipos_operacion ct ON c.id = ct.cuenta_id
