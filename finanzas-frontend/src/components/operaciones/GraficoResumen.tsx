@@ -1,5 +1,4 @@
 import { PieChart, Pie, Tooltip, ResponsiveContainer } from 'recharts';
-import { formatearMoneda } from '../../utils/formatters';
 
 type GraficoProps = {
   titulo: string;
