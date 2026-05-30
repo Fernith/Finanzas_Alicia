@@ -113,7 +113,7 @@ export default function Inversiones() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-slate-200 dark:border-amber-600/40 pb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-slate-200 dark:border-amber-500/30 pb-6">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-gradient-to-br from-amber-100 to-orange-200 dark:from-amber-900/40 dark:to-orange-900/20 rounded-2xl shadow-sm border border-amber-200/50 dark:border-amber-800/50">
             <LineChart className="text-amber-600 dark:text-amber-400" size={32} />
@@ -126,7 +126,7 @@ export default function Inversiones() {
       </div>
 
       <div className={`grid grid-cols-1 ${usarPendientes ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
-        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-600/40 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300">
+        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-500/30 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300">
           <div className="p-4 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">
             <Wallet size={40} />
           </div>
@@ -141,7 +141,7 @@ export default function Inversiones() {
         </div>
 
         {usarPendientes && (
-          <div className="bg-white dark:bg-neutral-900 border border-amber-200 dark:border-amber-600/40 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300 relative overflow-hidden">
+          <div className="bg-white dark:bg-neutral-900 border border-amber-200 dark:border-amber-500/30 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 transition-all duration-300 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-amber-50 dark:bg-amber-900/10 rounded-bl-full -z-10"></div>
             <div className="p-4 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">
               <Clock size={40} />
@@ -159,9 +159,9 @@ export default function Inversiones() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-600/40 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+        <div className="lg:col-span-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-500/30 rounded-2xl shadow-sm flex flex-col overflow-hidden">
           
-          <div className="p-5 border-b border-slate-200 dark:border-amber-600/40 shrink-0 bg-slate-50/50 dark:bg-neutral-900/50 flex flex-col gap-5">
+          <div className="p-5 border-b border-slate-200 dark:border-amber-500/30 shrink-0 bg-slate-50/50 dark:bg-neutral-900/50 flex flex-col gap-5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-bold text-slate-800 dark:text-white">Listado de Transacciones</h2>
             </div>
@@ -185,7 +185,7 @@ export default function Inversiones() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-600/40 rounded-xl shadow-sm p-5 flex flex-col sticky top-24">
+        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-500/30 rounded-xl shadow-sm p-5 flex flex-col sticky top-24">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Resumen de Activos</h2>
           {datosGrafico.length > 0 ? (
             <>

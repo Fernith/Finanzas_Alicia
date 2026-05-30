@@ -16,7 +16,6 @@ export default function Ahorros() {
   const [metaAEditar, setMetaAEditar] = useState<any>(null);
   const [itemAEliminar, setItemAEliminar] = useState<any>(null);
 
-  // Estados de los nuevos modales
   const [modalHistorial, setModalHistorial] = useState<any>(null);
   const [modalMovimiento, setModalMovimiento] = useState<{ meta: any, tipo: 'add' | 'withdraw' } | null>(null);
   const [modalFinalizar, setModalFinalizar] = useState<any>(null);
@@ -41,10 +40,10 @@ export default function Ahorros() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12 w-full">
-      <div className="flex flex-col justify-between items-start border-b border-slate-200 dark:border-slate-800 pb-6">
+      <div className="flex flex-col justify-between items-start border-b border-slate-200 dark:border-neutral-700 pb-6">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-amber-100 to-orange-200 dark:from-amber-900/40 dark:to-orange-900/20 rounded-2xl border border-amber-200/50 dark:border-amber-800/50">
-            <PiggyBank className="text-amber-600 dark:text-amber-400" size={32} />
+          <div className="p-3 bg-gradient-to-br from-purple-100 to-fuchsia-200 dark:from-purple-900/40 dark:to-fuchsia-900/20 rounded-2xl border border-purple-200/50 dark:border-purple-800/50">
+            <PiggyBank className="text-purple-600 dark:text-purple-400" size={32} />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Caja de Ahorros</h1>
@@ -54,16 +53,16 @@ export default function Ahorros() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Link to="/ahorros/liquidez" className="block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:ring-2 hover:ring-blue-500 hover:shadow-md transition-all group">
+        <Link to="/ahorros/liquidez" className="block bg-white dark:bg-neutral-900 border border-slate-200 dark:border-slate-500/50 p-6 rounded-2xl shadow-sm hover:ring-2 hover:ring-blue-500 hover:shadow-md transition-all group">
           <div className="flex justify-between items-start">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><Coins size={14}/> Fondo Líquido Real</p>
-            <div className="p-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-blue-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 transition-colors"><Plus size={16}/></div>
+            <div className="p-1 rounded bg-slate-100 dark:bg-neutral-800 text-slate-400 group-hover:text-blue-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 transition-colors"><Plus size={16}/></div>
           </div>
           <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">{formatearMoneda(resumen.dinero_liquido)} €</p>
           <span className="text-[10px] text-slate-400 block mt-1">Gestionar cuentas y balances manuales</span>
         </Link>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-emerald-500/50 p-6 rounded-2xl shadow-sm">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><Target size={14} className="text-emerald-500" /> Reservado para Metas</p>
           <p className="text-2xl font-black text-emerald-500 mt-2">{formatearMoneda(totalReservadoMetas)} €</p>
           <span className="text-[10px] text-slate-400 block mt-1">Retenido virtualmente en los sobres</span>
@@ -75,10 +74,10 @@ export default function Ahorros() {
           <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mt-1">Dinero libre para usar</span>
         </div>
 
-        <Link to="/inversiones" className="block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:ring-2 hover:ring-amber-500 hover:shadow-md transition-all group">
+        <Link to="/inversiones" className="block bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-500/50 p-6 rounded-2xl shadow-sm hover:ring-2 hover:ring-amber-500 hover:shadow-md transition-all group">
           <div className="flex justify-between items-start">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><ArrowRightLeft size={14}/> Capital Invertido</p>
-            <div className="p-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-amber-500 group-hover:bg-amber-50 dark:group-hover:bg-amber-900/30 transition-colors"><ArrowRightLeft size={16}/></div>
+            <div className="p-1 rounded bg-slate-100 dark:bg-neutral-800 text-slate-400 group-hover:text-amber-500 group-hover:bg-amber-50 dark:group-hover:bg-amber-900/30 transition-colors"><ArrowRightLeft size={16}/></div>
           </div>
           <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">{formatearMoneda(resumen.dinero_invertido)} €</p>
           <span className="text-[10px] text-slate-400 block mt-1">Ver desglose de inversiones y ETFs</span>
@@ -86,9 +85,12 @@ export default function Ahorros() {
       </div>
 
       <div className="space-y-6">
-        <div className="flex justify-between items-end border-b border-slate-200 dark:border-slate-800 pb-4">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2"><Target className="text-emerald-500"/> Tus Sobres y Metas Virtuales</h2>
-          <button onClick={() => { setMetaAEditar(null); setModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl shadow-md shadow-emerald-500/10 active:scale-95 transition-all">
+        <div className="flex justify-between items-end border-b border-slate-200 dark:border-neutral-700 pb-4">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2"><Target className="text-purple-500"/> Tus Sobres y Metas Virtuales</h2>
+          <button 
+            onClick={() => { setMetaAEditar(null); setModalOpen(true); }} 
+            className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-semibold rounded-xl shadow-md shadow-purple-500/10 active:scale-95 transition-all"
+          >
             <Plus size={16} /> Añadir Meta
           </button>
         </div>
@@ -98,15 +100,15 @@ export default function Ahorros() {
             const porcentaje = Math.min(100, (m.ahorrado / m.objetivo) * 100);
 
             return (
-              <div key={m.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col p-5">
+              <div key={m.id} className="bg-white dark:bg-neutral-900 border rounded-2xl shadow-sm overflow-hidden flex flex-col p-5" style={{ borderColor: m.color }}>
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: m.color }}></span>
                     <h3 className="font-bold text-slate-800 dark:text-slate-200">{m.nombre}</h3>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => { setMetaAEditar(m); setModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"><Pencil size={15}/></button>
-                    <button onClick={() => setItemAEliminar(m)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"><Trash2 size={15}/></button>
+                    <button onClick={() => { setMetaAEditar(m); setModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded"><Pencil size={15}/></button>
+                    <button onClick={() => setItemAEliminar(m)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded"><Trash2 size={15}/></button>
                   </div>
                 </div>
                 
@@ -115,15 +117,14 @@ export default function Ahorros() {
                     <span className="text-slate-700 dark:text-slate-300">Asignado: {formatearMoneda(m.ahorrado)} €</span>
                     <span className="text-slate-400">Objetivo: {formatearMoneda(m.objetivo)} €</span>
                   </div>
-                  <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                  <div className="w-full h-2.5 bg-slate-100 dark:bg-neutral-800 rounded-full overflow-hidden shadow-inner">
                     <div className="h-full rounded-full transition-all duration-500" style={{ width: `${porcentaje}%`, backgroundColor: m.color }}></div>
                   </div>
                   <p className="text-right text-[10px] font-bold text-slate-400 pt-1">{porcentaje.toFixed(0)}% Completado</p>
                 </div>
 
-                {/* BOTONERA DE ACCIÓN RÁPIDA */}
-                <div className="grid grid-cols-4 gap-2 mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
-                  <button onClick={() => setModalHistorial(m)} className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-colors group">
+                <div className="grid grid-cols-4 gap-2 mt-auto pt-4 border-t border-slate-100 dark:border-neutral-800">
+                  <button onClick={() => setModalHistorial(m)} className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-neutral-800 transition-colors group">
                     <History size={18} className="mb-1" />
                     <span className="text-[9px] font-bold uppercase tracking-wider">Histórico</span>
                   </button>
@@ -140,7 +141,6 @@ export default function Ahorros() {
                     <span className="text-[9px] font-bold uppercase tracking-wider">Finalizar</span>
                   </button>
                 </div>
-
               </div>
             );
           })}
@@ -150,7 +150,6 @@ export default function Ahorros() {
       <ModalMetaAhorro isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={cargarDatos} metaAEditar={metaAEditar} />
       <ModalConfirmacion isOpen={!!itemAEliminar} onClose={() => setItemAEliminar(null)} onConfirm={handleEliminarMeta} titulo="Eliminar meta de ahorro" mensaje={`¿Estás seguro de eliminar el sobre "${itemAEliminar?.nombre}"? El dinero volverá a estar libre.`} />
       
-      {/* NUEVOS MODALES */}
       <ModalHistorialMeta isOpen={!!modalHistorial} onClose={() => setModalHistorial(null)} meta={modalHistorial} />
       <ModalMovimientoMeta isOpen={!!modalMovimiento} onClose={() => setModalMovimiento(null)} onSuccess={cargarDatos} meta={modalMovimiento?.meta} tipo={modalMovimiento?.tipo} />
       <ModalFinalizarMeta isOpen={!!modalFinalizar} onClose={() => setModalFinalizar(null)} onSuccess={cargarDatos} meta={modalFinalizar} />

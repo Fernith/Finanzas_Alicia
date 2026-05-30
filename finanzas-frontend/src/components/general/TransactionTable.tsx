@@ -32,7 +32,6 @@ const formatearFechaLarga = (fechaStr: string) => {
 export default function TransactionTable({ columns, data, colorTheme, categoriasDisponibles, cuentasDisponibles, onGlobalSearch, onEdit, onDelete, onMarcarCompletado }: TableProps) {
   const { usarPendientes } = useConfig();
   
-  // Paginación interna
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
   
@@ -40,24 +39,20 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'fecha', direction: 'desc' });
 
-  // Resetear la página si cambiamos los filtros o la búsqueda
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filtros, sortConfig]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filtros, sortConfig]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (onGlobalSearch) onGlobalSearch(searchTerm);
-    }, 300);
+    const timer = setTimeout(() => { if (onGlobalSearch) onGlobalSearch(searchTerm); }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm, onGlobalSearch]);
 
+  // TEMAS DINÁMICOS CON BORDES PERSONALIZADOS
   const headerThemes = {
-    red: 'bg-red-50/80 dark:bg-red-900/20 border-b border-red-100 dark:border-amber-600/40',
-    emerald: 'bg-emerald-50/80 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-amber-600/40',
-    blue: 'bg-blue-50/80 dark:bg-blue-900/20 border-b border-blue-100 dark:border-amber-600/40',
-    amber: 'bg-amber-50/80 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-600/40',
-    purple: 'bg-purple-50/80 dark:bg-purple-900/20 border-b border-purple-100 dark:border-amber-600/40',
+    red: 'bg-red-50/80 dark:bg-red-900/20 border-b border-red-100 dark:border-red-500/30',
+    emerald: 'bg-emerald-50/80 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-500/30',
+    blue: 'bg-blue-50/80 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-500/30',
+    amber: 'bg-amber-50/80 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-500/30',
+    purple: 'bg-purple-50/80 dark:bg-purple-900/20 border-b border-purple-100 dark:border-purple-500/30',
   };
 
   const rowThemes = {
@@ -69,16 +64,25 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
   };
 
   const footerThemes = {
-    red: 'bg-red-50/60 dark:bg-neutral-900/80 border-t-2 border-red-100 dark:border-amber-600/40 text-red-700 dark:text-red-400',
-    emerald: 'bg-emerald-50/60 dark:bg-neutral-900/80 border-t-2 border-emerald-100 dark:border-amber-600/40 text-emerald-700 dark:text-emerald-400',
-    blue: 'bg-blue-50/60 dark:bg-neutral-900/80 border-t-2 border-blue-100 dark:border-amber-600/40 text-blue-700 dark:text-blue-400',
-    amber: 'bg-amber-50/60 dark:bg-neutral-900/80 border-t-2 border-amber-100 dark:border-amber-600/40 text-amber-700 dark:text-amber-400',
-    purple: 'bg-purple-50/60 dark:bg-neutral-900/80 border-t-2 border-purple-100 dark:border-amber-600/40 text-purple-700 dark:text-purple-400',
+    red: 'bg-red-50/60 dark:bg-neutral-900/80 border-t-2 border-red-100 dark:border-red-500/30 text-red-700 dark:text-red-400',
+    emerald: 'bg-emerald-50/60 dark:bg-neutral-900/80 border-t-2 border-emerald-100 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400',
+    blue: 'bg-blue-50/60 dark:bg-neutral-900/80 border-t-2 border-blue-100 dark:border-blue-500/30 text-blue-700 dark:text-blue-400',
+    amber: 'bg-amber-50/60 dark:bg-neutral-900/80 border-t-2 border-amber-100 dark:border-amber-500/30 text-amber-700 dark:text-amber-400',
+    purple: 'bg-purple-50/60 dark:bg-neutral-900/80 border-t-2 border-purple-100 dark:border-purple-500/30 text-purple-700 dark:text-purple-400',
   };
 
-  const headerBg = colorTheme ? headerThemes[colorTheme] : 'bg-slate-50/50 dark:bg-neutral-900/50 border-b border-slate-200 dark:border-amber-600/40';
+  const divideThemes = {
+    red: 'divide-slate-100 dark:divide-red-500/20',
+    emerald: 'divide-slate-100 dark:divide-emerald-500/20',
+    blue: 'divide-slate-100 dark:divide-blue-500/20',
+    amber: 'divide-slate-100 dark:divide-amber-500/20',
+    purple: 'divide-slate-100 dark:divide-purple-500/20',
+  };
+
+  const headerBg = colorTheme ? headerThemes[colorTheme] : 'bg-slate-50/50 dark:bg-neutral-900/50 border-b border-slate-200 dark:border-neutral-700';
   const rowBg = colorTheme ? rowThemes[colorTheme] : 'even:bg-slate-50/50 dark:even:bg-neutral-900/50 hover:bg-slate-100 dark:hover:bg-neutral-800/80';
-  const footerBg = colorTheme ? footerThemes[colorTheme] : 'bg-slate-100/80 dark:bg-neutral-900/80 border-t-2 border-slate-200 dark:border-amber-600/40 text-slate-900 dark:text-white';
+  const footerBg = colorTheme ? footerThemes[colorTheme] : 'bg-slate-100/80 dark:bg-neutral-900/80 border-t-2 border-slate-200 dark:border-neutral-700 text-slate-900 dark:text-white';
+  const tbodyDivide = colorTheme ? divideThemes[colorTheme] : 'divide-slate-100 dark:divide-neutral-800';
 
   const opcionesFiltro = useMemo(() => {
     const opciones: Record<string, string[]> = {};
@@ -90,44 +94,31 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
     return opciones;
   }, [data, columns, categoriasDisponibles, cuentasDisponibles]);
 
-  // 1. Filtrar y Ordenar (Datos procesados totales)
   const processedData = useMemo(() => {
     let result = [...data];
     Object.entries(filtros).forEach(([key, value]) => {
       if (value !== '') result = result.filter(row => row[key] === value);
     });
-
     result.sort((a, b) => {
       let valA = a[sortConfig.key];
       let valB = b[sortConfig.key];
-      if (sortConfig.key === 'fecha') {
-        valA = new Date(valA).getTime();
-        valB = new Date(valB).getTime();
-      }
+      if (sortConfig.key === 'fecha') { valA = new Date(valA).getTime(); valB = new Date(valB).getTime(); }
       if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
       if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-
     return result;
   }, [data, filtros, sortConfig]);
 
-  // 2. Suma total de los filtrados (No solo de la página actual)
-  const sumaCantidadFiltrada = useMemo(() => {
-    return processedData.reduce((acc, curr) => acc + Number(curr.cantidad), 0);
-  }, [processedData]);
+  const sumaCantidadFiltrada = useMemo(() => processedData.reduce((acc, curr) => acc + Number(curr.cantidad), 0), [processedData]);
 
-  // 3. Paginación
   const totalItems = processedData.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedData = processedData.slice(startIndex, startIndex + itemsPerPage);
 
   const handleSort = (key: string) => {
-    setSortConfig(current => ({
-      key,
-      direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc'
-    }));
+    setSortConfig(current => ({ key, direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc' }));
   };
 
   return (
@@ -137,17 +128,10 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search size={16} className="text-slate-400" />
           </div>
-          <input
-            type="text"
-            placeholder="Buscar en cualquier campo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-10 py-2 bg-slate-100 dark:bg-neutral-800 border-transparent rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-neutral-700 focus:bg-white dark:focus:bg-black focus:border-red-300 dark:focus:border-red-700 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/30 transition-all dark:text-white outline-none"
-          />
+          <input type="text" placeholder="Buscar en cualquier campo..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+            className={`w-full pl-10 pr-10 py-2 bg-slate-100 dark:bg-neutral-800 border-transparent rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-neutral-700 focus:bg-white dark:focus:bg-black focus:ring-2 transition-all dark:text-white outline-none ${colorTheme ? `focus:border-${colorTheme}-500 dark:focus:border-${colorTheme}-500 focus:ring-${colorTheme}-100 dark:focus:ring-${colorTheme}-900/30` : 'focus:ring-slate-200 dark:focus:ring-slate-800'}`} />
           {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-              <X size={16} />
-            </button>
+            <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><X size={16} /></button>
           )}
         </div>
 
@@ -155,15 +139,11 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
           {columns.filter(c => c.filterable).map(col => (
             <div key={col.key} className="relative flex items-center w-full sm:w-auto">
               <Filter size={14} className="absolute left-3 text-slate-400" />
-              <select
-                value={filtros[col.key] || ''}
-                onChange={(e) => setFiltros({ ...filtros, [col.key]: e.target.value })}
-                className="w-full sm:w-auto pl-8 pr-8 py-2 bg-slate-100 dark:bg-neutral-800 border-transparent rounded-lg text-sm appearance-none cursor-pointer hover:bg-slate-200 dark:hover:bg-neutral-700 focus:bg-white dark:focus:bg-black focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/30 transition-all dark:text-white outline-none"
+              <select value={filtros[col.key] || ''} onChange={(e) => setFiltros({ ...filtros, [col.key]: e.target.value })}
+                className={`w-full sm:w-auto pl-8 pr-8 py-2 bg-slate-100 dark:bg-neutral-800 border-transparent rounded-lg text-sm appearance-none cursor-pointer hover:bg-slate-200 dark:hover:bg-neutral-700 focus:bg-white dark:focus:bg-black focus:ring-2 transition-all dark:text-white outline-none ${colorTheme ? `focus:ring-${colorTheme}-100 dark:focus:ring-${colorTheme}-900/30` : 'focus:ring-slate-200 dark:focus:ring-slate-800'}`}
               >
                 <option value="">Todas las {col.label.toLowerCase()}</option>
-                {opcionesFiltro[col.key]?.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
+                {opcionesFiltro[col.key]?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
               <ChevronDown size={14} className="absolute right-3 text-slate-400 pointer-events-none" />
             </div>
@@ -188,74 +168,45 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
             </tr>
           </thead>
           
-          <tbody className={`divide-y divide-slate-100 dark:divide-amber-600/20`}>
+          <tbody className={`divide-y ${tbodyDivide}`}>
             {paginatedData.length > 0 ? (
               paginatedData.map((row, index) => (
                 <tr key={row.id || index} className={`transition-colors ${rowBg} ${usarPendientes && row.pendiente ? 'opacity-85' : ''}`}>
-                  
                   {usarPendientes && (
                     <td className="p-4 w-12 text-center">
-                      {row.pendiente ? (
-                        <Clock size={18} className="text-amber-500 mx-auto drop-shadow-sm" />
-                      ) : (
-                        <CheckCircle2 size={18} className="text-emerald-500 mx-auto drop-shadow-sm" />
-                      )}
+                      {row.pendiente ? <Clock size={18} className="text-amber-500 mx-auto drop-shadow-sm" /> : <CheckCircle2 size={18} className="text-emerald-500 mx-auto drop-shadow-sm" />}
                     </td>
                   )}
-
                   {columns.map((col) => (
                     <td key={col.key} className="p-4 text-sm text-slate-700 dark:text-slate-300">
-                      {col.key === 'fecha' ? (
-                        <span>{formatearFechaLarga(row[col.key])}</span>
-                      ) : col.key === 'cantidad' ? (
-                        <span className="font-semibold text-slate-900 dark:text-white">
-                          {formatearMoneda(Number(row[col.key]))} €
-                        </span>
-                      ) : row[col.key]}
+                      {col.key === 'fecha' ? <span>{formatearFechaLarga(row[col.key])}</span> : col.key === 'cantidad' ? <span className="font-semibold text-slate-900 dark:text-white">{formatearMoneda(Number(row[col.key]))} €</span> : row[col.key]}
                     </td>
                   ))}
                   {(onEdit || onDelete || onMarcarCompletado) && (
                     <td className="p-4 text-right space-x-2 whitespace-nowrap">
                       {usarPendientes && row.pendiente && onMarcarCompletado && (
-                        <button onClick={() => onMarcarCompletado(row.id)} className="p-1.5 inline-flex text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition-colors" title="Marcar como completado">
-                          <Check size={16} strokeWidth={3} />
-                        </button>
+                        <button onClick={() => onMarcarCompletado(row.id)} className="p-1.5 inline-flex text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition-colors" title="Marcar como completado"><Check size={16} strokeWidth={3} /></button>
                       )}
                       {onEdit && (
-                        <button onClick={() => onEdit(row)} className="p-1.5 inline-flex text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors" title="Editar">
-                          <Pencil size={16} />
-                        </button>
+                        <button onClick={() => onEdit(row)} className="p-1.5 inline-flex text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors" title="Editar"><Pencil size={16} /></button>
                       )}
                       {onDelete && (
-                        <button onClick={() => onDelete(row.id)} className="p-1.5 inline-flex text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors" title="Eliminar">
-                          <Trash2 size={16} />
-                        </button>
+                        <button onClick={() => onDelete(row.id)} className="p-1.5 inline-flex text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors" title="Eliminar"><Trash2 size={16} /></button>
                       )}
                     </td>
                   )}
                 </tr>
               ))
             ) : (
-              <tr>
-                <td colSpan={columns.length + (usarPendientes ? 2 : 1)} className="p-8 text-center text-slate-500 dark:text-slate-400">No se encontraron resultados</td>
-              </tr>
+              <tr><td colSpan={columns.length + (usarPendientes ? 2 : 1)} className="p-8 text-center text-slate-500 dark:text-slate-400">No se encontraron resultados</td></tr>
             )}
           </tbody>
-
           <tfoot>
             <tr className={`font-bold ${footerBg}`}>
               {usarPendientes && <td></td>}
               {columns.map((col, index) => (
                 <td key={`total-${col.key}`} className="p-4 text-sm whitespace-nowrap">
-                  {col.key === 'cantidad' ? (
-                    <span className="text-base font-black tracking-tight">
-                      {formatearMoneda(sumaCantidadFiltrada)} €
-                    </span>
-                  ) : index === 0 ? (
-                    <span className="uppercase text-xs font-bold tracking-wider opacity-70">Total Filtrado:</span>
-                  ) : (
-                    ''
-                  )}
+                  {col.key === 'cantidad' ? <span className="text-base font-black tracking-tight">{formatearMoneda(sumaCantidadFiltrada)} €</span> : index === 0 ? <span className="uppercase text-xs font-bold tracking-wider opacity-70">Total Filtrado:</span> : ''}
                 </td>
               ))}
               {(onEdit || onDelete || onMarcarCompletado) && <td></td>}
@@ -264,15 +215,11 @@ export default function TransactionTable({ columns, data, colorTheme, categorias
         </table>
       </div>
 
-      <div className="p-4 border-t border-slate-200 dark:border-amber-600/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-600 dark:text-slate-400">
+      <div className={`p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-600 dark:text-slate-400 ${colorTheme ? `border-slate-200 dark:border-${colorTheme}-500/30` : 'border-slate-200 dark:border-neutral-700'}`}>
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
           <div className="flex items-center gap-2">
             <span>Filas:</span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-              className="bg-slate-100 dark:bg-neutral-800 border-transparent rounded px-2 py-1 outline-none focus:ring-2 focus:ring-red-100 cursor-pointer"
-            >
+            <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className={`bg-slate-100 dark:bg-neutral-800 border-transparent rounded px-2 py-1 outline-none cursor-pointer focus:ring-2 ${colorTheme ? `focus:ring-${colorTheme}-100 dark:focus:ring-${colorTheme}-900/30` : 'focus:ring-slate-200 dark:focus:ring-slate-800'}`}>
               {[10, 15, 25, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
             </select>
           </div>
