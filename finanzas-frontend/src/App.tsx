@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import Navbar from './components/general/Navbar';
 import ModalTransaccion from './components/operaciones/ModalTransaccion';
 import { ConfigProvider } from './context/ConfigContext';
+import Suscripciones from './pages/Suscripciones';
 
 // Importa aquí tus páginas
 import Balance from './pages/Balance';
@@ -33,6 +34,7 @@ function App() {
               <Route path="/ahorros" element={<Ahorros />} />
               <Route path="/ajustes" element={<Ajustes />} />
               <Route path="/ahorros/liquidez" element={<Liquidez />} />
+              <Route path="/suscripciones" element={<Suscripciones />} />
             </Routes>
           </main>
 

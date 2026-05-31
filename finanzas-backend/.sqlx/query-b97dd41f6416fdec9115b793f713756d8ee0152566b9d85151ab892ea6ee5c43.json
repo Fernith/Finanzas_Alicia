@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT s.id::text as \"id!\", s.nombre, s.cantidad::float as \"cantidad!\", \n               s.cuenta_id::text as \"cuenta_id!\", c.nombre as \"cuenta_nombre!\", \n               s.fecha_inicio::text as \"fecha_inicio!\", s.fecha_proxima_renovacion::text as \"fecha_proxima_renovacion!\", \n               s.periodicidad::text as \"periodicidad!\", s.activo \n        FROM suscripciones s\n        JOIN cuentas c ON s.cuenta_id = c.id\n        ORDER BY s.activo DESC, s.fecha_proxima_renovacion ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "cantidad!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "cuenta_id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "cuenta_nombre!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "fecha_inicio!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "fecha_proxima_renovacion!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "periodicidad!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "activo",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      false,
+      null,
+      null,
+      false,
+      null,
+      null,
+      null,
+      false
+    ]
+  },
+  "hash": "b97dd41f6416fdec9115b793f713756d8ee0152566b9d85151ab892ea6ee5c43"
+}

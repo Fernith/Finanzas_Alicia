@@ -2,6 +2,7 @@
 mod handlers;
 mod error;
 mod dtos;
+mod cron;
 
 use axum::{routing::get, Router};
 use sqlx::postgres::PgPoolOptions;
@@ -20,6 +21,8 @@ async fn main() {
         .connect(&db_url)
         .await
         .expect("No se pudo conectar a la base de datos");
+
+    let pool_para_cron = pool.clone();
         
     println!("✅ Conectado a Supabase correctamente.");
 
@@ -85,12 +88,19 @@ async fn main() {
         .route("/api/ajustes/categorias/reordenar", axum::routing::put(handlers::ajustes::reordenar_categorias))
         .route("/api/ajustes/cuentas/reordenar", axum::routing::put(handlers::ajustes::reordenar_cuentas))
 
+        // SUSCRIPCIONES
+        .route("/api/suscripciones", axum::routing::get(handlers::suscripciones::listar_suscripciones).post(handlers::suscripciones::crear_suscripcion))
+        .route("/api/suscripciones/:id", axum::routing::put(handlers::suscripciones::modificar_suscripcion).delete(handlers::suscripciones::eliminar_suscripcion))
+
 
         .fallback_service(frontend)
 
         .layer(cors)
         .with_state(pool);
 
+    
+    cron::iniciar_cron_suscripciones(pool_para_cron).await;
+    
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let addr = format!("0.0.0.0:{}", port);
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();

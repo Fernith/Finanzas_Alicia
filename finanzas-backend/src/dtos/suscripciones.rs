@@ -1,0 +1,25 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize)]
+pub struct SuscripcionDTO {
+    pub id: String,
+    pub nombre: String,
+    pub cantidad: f64,
+    pub cuenta_id: String,
+    pub cuenta_nombre: String,
+    pub fecha_inicio: String,
+    pub fecha_proxima_renovacion: String,
+    pub periodicidad: String,
+    pub activo: bool,
+}
+
+#[derive(Deserialize)]
+pub struct UpsertSuscripcionDTO {
+    pub nombre: String,
+    pub cantidad: f64,
+    pub cuenta_id: String,
+    pub fecha_inicio: String,
+    pub fecha_proxima_renovacion: String,
+    pub periodicidad: String,
+    pub activo: bool,
+}

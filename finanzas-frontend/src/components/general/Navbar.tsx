@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Moon, Settings, Wallet, TrendingDown, TrendingUp, LineChart, Target } from 'lucide-react';
+import { Menu, X, Sun, Moon, Settings, Wallet, TrendingDown, TrendingUp, LineChart, Target, Repeat } from 'lucide-react';
 
 export default function Navbar() {
   const location = useLocation();
@@ -23,6 +23,7 @@ export default function Navbar() {
     { path: '/ingresos', label: 'Ingresos', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
     { path: '/inversiones', label: 'Inversiones', icon: LineChart, color: 'text-amber-500 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30' },
     { path: '/ahorros', label: 'Ahorros', icon: Target, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30' },
+    { path: '/suscripciones', label: 'Suscripciones', icon: Repeat, color: 'text-slate-800 dark:text-white', bg: 'bg-slate-200/50 dark:bg-neutral-800' },
   ];
 
   return (
