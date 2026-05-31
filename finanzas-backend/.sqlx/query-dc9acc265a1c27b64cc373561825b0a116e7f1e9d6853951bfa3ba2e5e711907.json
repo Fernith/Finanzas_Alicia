@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT \n            id::text as \"id!\", \n            nombre as \"nombre!\", \n            tipo_operacion_id as \"tipo_operacion_id!\", \n            color as \"color!\", \n            activo as \"activo!\", \n            orden as \"orden!\" \n           FROM categorias \n           ORDER BY orden ASC, nombre ASC",
+  "query": "SELECT \n            id::text as \"id!\", \n            nombre as \"nombre!\", \n            tipo_operacion_id::text as \"tipo_operacion_id!\", \n            color as \"color!\", \n            activo as \"activo!\", \n            orden as \"orden!\" \n           FROM categorias \n           ORDER BY orden ASC, nombre ASC",
   "describe": {
     "columns": [
       {
@@ -16,7 +16,7 @@
       {
         "ordinal": 2,
         "name": "tipo_operacion_id!",
-        "type_info": "Varchar"
+        "type_info": "Text"
       },
       {
         "ordinal": 3,
@@ -40,11 +40,11 @@
     "nullable": [
       null,
       false,
-      true,
+      null,
       true,
       true,
       false
     ]
   },
-  "hash": "9efc29add43e1168b4fb95489ac1d0b70f8150759aec75c14a4b49517b616106"
+  "hash": "dc9acc265a1c27b64cc373561825b0a116e7f1e9d6853951bfa3ba2e5e711907"
 }

@@ -16,7 +16,7 @@ pub async fn obtener_balance_anual(
         SELECT 
             o.fecha::text as "fecha!", 
             o.cantidad::float as "cantidad!", 
-            o.tipo_operacion_id as "tipo_operacion_id!", 
+            o.tipo_operacion_id::text as "tipo_operacion_id!", 
             c.nombre as "categoria!", 
             c.color as "color!"
         FROM operaciones o

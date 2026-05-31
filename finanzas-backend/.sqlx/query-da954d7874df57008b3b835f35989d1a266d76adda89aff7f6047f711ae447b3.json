@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM operaciones WHERE id = $1::text::uuid AND tipo_operacion_id = 'INVERSION'::tipo_operacion_enum",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "da954d7874df57008b3b835f35989d1a266d76adda89aff7f6047f711ae447b3"
+}

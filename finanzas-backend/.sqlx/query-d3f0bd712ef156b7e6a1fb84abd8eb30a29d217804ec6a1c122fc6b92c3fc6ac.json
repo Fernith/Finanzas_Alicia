@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT c.id::text as \"id!\", c.nombre, c.color, c.activo \n           FROM cuentas c\n           JOIN cuentas_tipos_operacion ct ON c.id = ct.cuenta_id\n           WHERE ct.tipo_operacion_id = 'INGRESO'\n           ORDER BY c.orden ASC, c.nombre ASC",
+  "query": "SELECT c.id::text as \"id!\", c.nombre, c.color, c.activo \n           FROM cuentas c\n           JOIN cuentas_tipos_operacion ct ON c.id = ct.cuenta_id\n           WHERE ct.tipo_operacion_id = 'GASTO'::tipo_operacion_enum\n           ORDER BY c.orden ASC, c.nombre ASC",
   "describe": {
     "columns": [
       {
@@ -34,5 +34,5 @@
       true
     ]
   },
-  "hash": "1d93ec2a2af6f470b9bd2ea1ca685d8f8f916337f2f5300313a4c6f59024ead6"
+  "hash": "d3f0bd712ef156b7e6a1fb84abd8eb30a29d217804ec6a1c122fc6b92c3fc6ac"
 }

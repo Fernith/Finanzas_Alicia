@@ -11,13 +11,12 @@ pub async fn iniciar_cron_suscripciones(pool: PgPool) {
 
             let cat_id = match sqlx::query_scalar::<_, String>("SELECT id::text FROM categorias WHERE nombre ILIKE 'Suscripciones' LIMIT 1").fetch_optional(&pool).await {
                 Ok(Some(id)) => id,
-                _ => sqlx::query_scalar::<_, String>("INSERT INTO categorias (nombre, tipo_operacion_id, color, activo, orden) VALUES ('Suscripciones', 'GASTO', '#f43f5e', true, 999) RETURNING id::text").fetch_one(&pool).await.unwrap_or_default()
+                _ => sqlx::query_scalar::<_, String>("INSERT INTO categorias (nombre, tipo_operacion_id, color, activo, orden) VALUES ('Suscripciones', 'GASTO'::tipo_operacion_enum, '#f43f5e', true, 999) RETURNING id::text").fetch_one(&pool).await.unwrap_or_default()
             };
 
             if cat_id.is_empty() { continue; }
 
             loop {
-                // Sacamos todo como texto o float para evitar fallos de librerías
                 let rows = sqlx::query!(
                     r#"SELECT id::text as "id!", nombre, cantidad::float as "cantidad!", cuenta_id::text as "cuenta_id!", periodicidad::text as "periodicidad!", fecha_proxima_renovacion::text as "fecha_proxima_renovacion!"
                        FROM suscripciones WHERE activo = true AND fecha_proxima_renovacion <= CURRENT_DATE"#
@@ -29,7 +28,7 @@ pub async fn iniciar_cron_suscripciones(pool: PgPool) {
                     let desc = format!("Renovación: {}", row.nombre);
                     
                     let _ = sqlx::query(
-                        "INSERT INTO operaciones (tipo_operacion_id, fecha, cantidad, categoria_id, cuenta_id, descripcion, pendiente) VALUES ('GASTO', $1::date, $2::float8::numeric, $3::uuid, $4::uuid, $5, false)"
+                        "INSERT INTO operaciones (tipo_operacion_id, fecha, cantidad, categoria_id, cuenta_id, descripcion, pendiente) VALUES ('GASTO'::tipo_operacion_enum, $1::date, $2::float8::numeric, $3::uuid, $4::uuid, $5, false)"
                     )
                     .bind(&row.fecha_proxima_renovacion).bind(row.cantidad).bind(&cat_id).bind(&row.cuenta_id).bind(&desc)
                     .execute(&pool).await;
