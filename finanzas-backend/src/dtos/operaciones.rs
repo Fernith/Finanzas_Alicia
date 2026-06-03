@@ -17,6 +17,7 @@ pub struct MaestroDTO {
     pub activo: Option<bool> 
 }
 
+// --- GASTOS ---
 #[derive(Serialize)]
 pub struct GastoDTO { 
     pub id: String, 
@@ -38,6 +39,7 @@ pub struct NuevoGastoDTO {
     pub pendiente: bool 
 }
 
+// --- INGRESOS ---
 #[derive(Serialize)]
 pub struct IngresoDTO { 
     pub id: String, 
@@ -46,7 +48,7 @@ pub struct IngresoDTO {
     pub categoria: String, 
     pub cuenta: String, 
     pub descripcion: Option<String>, 
-    pub campo_extra_ingreso: Option<String>, 
+    // ELIMINADO: pub campo_extra_ingreso: Option<String>, 
     pub pendiente: bool 
 }
 
@@ -57,10 +59,12 @@ pub struct NuevoIngresoDTO {
     pub categoria_id: String, 
     pub cuenta_id: String, 
     pub descripcion: Option<String>, 
-    pub campo_extra_ingreso: Option<String>, 
+    // ELIMINADO: pub campo_extra_ingreso: Option<String>, 
     pub pendiente: bool 
 }
 
+// --- INVERSIONES (EN CUARENTENA) ---
+/*
 #[derive(Serialize)]
 pub struct InversionDTO { 
     pub id: String, 
@@ -84,3 +88,4 @@ pub struct UpsertInversionDTO {
     pub descripcion: Option<String>, 
     pub pendiente: bool 
 }
+*/

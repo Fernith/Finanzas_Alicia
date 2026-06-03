@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id::text as \"id!\", nombre, color, activo FROM categorias WHERE tipo_operacion_id = 'INVERSION'::tipo_operacion_enum ORDER BY orden ASC, nombre ASC",
+  "query": "SELECT id::text as \"id!\", nombre as \"nombre!\", color, activo as \"activo!\", orden as \"orden!\" FROM grupos ORDER BY orden ASC, nombre ASC",
   "describe": {
     "columns": [
       {
@@ -10,18 +10,23 @@
       },
       {
         "ordinal": 1,
-        "name": "nombre",
-        "type_info": "Varchar"
+        "name": "nombre!",
+        "type_info": "Text"
       },
       {
         "ordinal": 2,
         "name": "color",
-        "type_info": "Varchar"
+        "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "activo",
+        "name": "activo!",
         "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "orden!",
+        "type_info": "Int4"
       }
     ],
     "parameters": {
@@ -31,8 +36,9 @@
       null,
       false,
       true,
+      true,
       true
     ]
   },
-  "hash": "91e3cd21ccc11f3b455e1a121299a0ba7d406e5409b689335145ec024fac0fb6"
+  "hash": "d8f2ebdccee0dcbbcb96c06def69c91b37d0ee310aca8430739f1e3722d1c646"
 }

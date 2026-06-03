@@ -21,12 +21,12 @@
       {
         "ordinal": 3,
         "name": "categoria!",
-        "type_info": "Varchar"
+        "type_info": "Text"
       },
       {
         "ordinal": 4,
         "name": "cuenta!",
-        "type_info": "Varchar"
+        "type_info": "Text"
       },
       {
         "ordinal": 5,

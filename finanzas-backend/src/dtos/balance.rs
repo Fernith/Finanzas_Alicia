@@ -11,5 +11,5 @@ pub struct OperacionAnualDTO {
     pub cantidad: f64,
     pub tipo_operacion_id: String,
     pub categoria: String,
-    pub color: String,
+    //pub color: String,
 }

@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { X, Type, Layers, Palette, CheckSquare } from 'lucide-react';
+import { X, Type, Layers, Palette, CheckSquare, Folder } from 'lucide-react';
 
 type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  target: 'categorias' | 'cuentas';
+  target: 'grupos' | 'categorias' | 'cuentas';
   itemAEditar?: any;
+  grupos?: any[]; // Necesitamos los grupos para el desplegable de categorías
 };
 
-export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target, itemAEditar }: ModalProps) {
+export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target, itemAEditar, grupos = [] }: ModalProps) {
   const [nombre, setNombre] = useState('');
-  const [tipoOperacionId, setTipoOperacionId] = useState('GASTO');
   const [color, setColor] = useState('#3b82f6');
   
-  const [tiposCuenta, setTiposCuenta] = useState<string[]>(['GASTO', 'INGRESO', 'INVERSION']); 
+  const [tipoOperacionId, setTipoOperacionId] = useState('GASTO');
+  const [grupoId, setGrupoId] = useState(''); // Nuevo estado para categorías
+  
+  // INVERSION quitado por defecto al crear cuentas
+  const [tiposCuenta, setTiposCuenta] = useState<string[]>(['GASTO', 'INGRESO']); 
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
@@ -22,16 +26,20 @@ export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target,
       if (itemAEditar) {
         setNombre(itemAEditar.nombre);
         setColor(itemAEditar.color || '#3b82f6');
-        if (target === 'categorias') setTipoOperacionId(itemAEditar.tipo_operacion_id);
+        if (target === 'categorias') {
+          setTipoOperacionId(itemAEditar.tipo_operacion_id);
+          setGrupoId(itemAEditar.grupo_id || '');
+        }
         if (target === 'cuentas') setTiposCuenta(itemAEditar.tipos_operacion || []);
       } else {
         setNombre('');
         setColor('#3b82f6');
         setTipoOperacionId('GASTO');
-        setTiposCuenta(['GASTO', 'INGRESO', 'INVERSION']);
+        setGrupoId(grupos.length > 0 ? grupos[0].id : ''); // Seleccionar el primer grupo por defecto si existe
+        setTiposCuenta(['GASTO', 'INGRESO']);
       }
     }
-  }, [isOpen, itemAEditar, target]);
+  }, [isOpen, itemAEditar, target, grupos]);
 
   if (!isOpen) return null;
 
@@ -49,27 +57,33 @@ export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target,
 
     setEnviando(true);
     
-    // El payload cambia según si es cuenta o categoría
-    const payload = target === 'categorias' 
-      ? { nombre: nombre.trim(), tipo_operacion_id: tipoOperacionId, color }
-      : { nombre: nombre.trim(), tipos_operacion: tiposCuenta, color };
+    let payload: any = { nombre: nombre.trim() };
+    
+    if (target === 'grupos') {
+      payload.color = color;
+    } else if (target === 'categorias') {
+      payload.tipo_operacion_id = tipoOperacionId;
+      payload.grupo_id = grupoId !== '' ? grupoId : null;
+      // Categorías ya NO envían color
+    } else if (target === 'cuentas') {
+      payload.tipos_operacion = tiposCuenta;
+      payload.color = color;
+    }
 
     try {
-      const url = itemAEditar
-        ? `/api/ajustes/${target}/${itemAEditar.id}`
-        : `/api/ajustes/${target}`;
-      const method = itemAEditar ? 'PUT' : 'POST';
+      const url = itemAEditar ? `/api/ajustes/${target}/${itemAEditar.id}` : `/api/ajustes/${target}`;
+      const response = await fetch(url, { 
+        method: itemAEditar ? 'PUT' : 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload) 
+      });
 
-      const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-
-      if (response.ok) {
-        onSuccess();
-        onClose();
-      } else { alert('Error al guardar.'); }
+      if (response.ok) { onSuccess(); onClose(); } 
+      else { alert('Error al guardar.'); }
     } catch { alert('Error de red.'); } finally { setEnviando(false); }
   };
 
-  const singuloLabel = target === 'categorias' ? 'Categoría' : 'Cuenta';
+  const singuloLabel = target === 'categorias' ? 'Categoría' : target === 'cuentas' ? 'Cuenta' : 'Grupo';
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
@@ -77,7 +91,7 @@ export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target,
         
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-            {itemAEditar ? `Editar ${singuloLabel}` : `Nueva ${singuloLabel}`}
+            {itemAEditar ? `Editar ${singuloLabel}` : `Nuevo ${singuloLabel}`}
           </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"><X size={18} /></button>
         </div>
@@ -88,24 +102,36 @@ export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target,
             <input type="text" required value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white outline-none focus:ring-2 focus:ring-blue-100" />
           </div>
 
-          {/* Selector simple SOLO para categorías */}
           {target === 'categorias' && (
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2"><Layers size={16} /> Tipo de Operación</label>
-              <select value={tipoOperacionId} onChange={(e) => setTipoOperacionId(e.target.value)} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white outline-none focus:ring-2 focus:ring-blue-100">
-                <option value="GASTO">Gastos</option>
-                <option value="INGRESO">Ingresos</option>
-                <option value="INVERSION">Inversiones</option>
-              </select>
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2"><Layers size={16} /> Tipo de Operación</label>
+                <select value={tipoOperacionId} onChange={(e) => setTipoOperacionId(e.target.value)} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white outline-none focus:ring-2 focus:ring-blue-100">
+                  <option value="GASTO">Gastos</option>
+                  <option value="INGRESO">Ingresos</option>
+                  {/* Categorías SÍ mantienen INVERSIÓN */}
+                  <option value="INVERSION">Inversiones</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2"><Folder size={16} /> Grupo al que pertenece</label>
+                <select value={grupoId} onChange={(e) => setGrupoId(e.target.value)} required className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white outline-none focus:ring-2 focus:ring-blue-100">
+                  <option value="" disabled>Selecciona un grupo...</option>
+                  {grupos.filter(g => g.activo).map(g => (
+                    <option key={g.id} value={g.id}>{g.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            </>
           )}
 
-          {/* Selector múltiple (Checkboxes) SOLO para cuentas */}
           {target === 'cuentas' && (
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2"><CheckSquare size={16} /> Disponible para:</label>
               <div className="flex gap-2 flex-wrap">
-                {['GASTO', 'INGRESO', 'INVERSION'].map(tipo => (
+                {/* Cuentas YA NO tienen INVERSIÓN como opción */}
+                {['GASTO', 'INGRESO'].map(tipo => (
                   <label key={tipo} className={`flex items-center gap-2 px-3 py-2 border rounded-xl cursor-pointer text-xs font-semibold transition-all ${tiposCuenta.includes(tipo) ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-white border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-700'}`}>
                     <input type="checkbox" checked={tiposCuenta.includes(tipo)} onChange={() => toggleTipoCuenta(tipo)} className="hidden" />
                     {tipo}
@@ -115,10 +141,13 @@ export default function ModalAjusteMaestro({ isOpen, onClose, onSuccess, target,
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2"><Palette size={16} /> Color</label>
-            <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 h-10 rounded-lg cursor-pointer bg-transparent border-0" />
-          </div>
+          {/* El color se pide para GRUPOS y CUENTAS, pero NO para categorías */}
+          {(target === 'grupos' || target === 'cuentas') && (
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2"><Palette size={16} /> Color</label>
+              <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 h-10 rounded-lg cursor-pointer bg-transparent border-0" />
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button type="submit" disabled={enviando} className="w-full sm:w-1/2 order-1 sm:order-2 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold shadow-md active:scale-95">{enviando ? 'Guardando...' : 'Guardar'}</button>

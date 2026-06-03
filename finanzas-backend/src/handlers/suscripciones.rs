@@ -28,7 +28,6 @@ pub async fn listar_suscripciones(State(pool): State<PgPool>) -> impl IntoRespon
 }
 
 pub async fn crear_suscripcion(State(pool): State<PgPool>, Json(payload): Json<UpsertSuscripcionDTO>) -> impl IntoResponse {
-    // Usamos query() normal y casteamos para evitar los fallos de librerías
     let result = sqlx::query(
         "INSERT INTO suscripciones (nombre, cantidad, cuenta_id, fecha_inicio, fecha_proxima_renovacion, periodicidad, activo) 
          VALUES ($1, $2::float8::numeric, $3::uuid, $4::date, $5::date, $6::tipo_periodicidad, $7)"

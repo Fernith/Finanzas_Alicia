@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT \n            c.id::text as \"id!\", \n            c.nombre as \"nombre!\", \n            c.color as \"color?\", \n            COALESCE(c.activo, true) as \"activo!\", \n            COALESCE(c.orden, 0) as \"orden!\",\n            COALESCE(array_agg(ct.tipo_operacion_id::text) FILTER (WHERE ct.tipo_operacion_id IS NOT NULL), ARRAY[]::text[]) as \"tipos_operacion!\"\n           FROM cuentas c\n           LEFT JOIN cuentas_tipos_operacion ct ON c.id = ct.cuenta_id\n           GROUP BY c.id ORDER BY c.orden ASC, c.nombre ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "color?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "activo!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "orden!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "tipos_operacion!",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      false,
+      true,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "cda2f9973e88d0e43026fc6f4ee1d5756759bacc114223eb0446caa6129ac955"
+}

@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            o.fecha::text as \"fecha!\", \n            o.cantidad::float as \"cantidad!\", \n            o.tipo_operacion_id::text as \"tipo_operacion_id!\", \n            c.nombre as \"categoria!\" \n            \n        FROM operaciones o\n        JOIN categorias c ON o.categoria_id = c.id\n        WHERE EXTRACT(YEAR FROM o.fecha) = $1 AND o.pendiente = false\n        ORDER BY o.fecha ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "fecha!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "cantidad!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo_operacion_id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "categoria!",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      false
+    ]
+  },
+  "hash": "bbf3bfe55cc48f8ca24fcc586c047b6479666c8de7c5fa25e5152693688f8d9b"
+}

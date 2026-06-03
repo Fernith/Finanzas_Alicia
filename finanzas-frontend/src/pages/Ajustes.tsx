@@ -4,25 +4,43 @@ import ModalAjusteMaestro from '../components/ajustes/ModalAjusteMaestro';
 import ModalConfirmacion from '../components/general/ModalConfirmacion';
 import TogglePendientes from '../components/ajustes/TogglePendientes';
 import CatalogoMaestro from '../components/ajustes/CatalogoMaestro';
+import ModalAlerta from '../components/general/ModalAlerta';
 import { useAjustes } from '../hooks/useAjustes';
+
+type TargetT = 'grupos' | 'categorias' | 'cuentas';
 
 export default function Ajustes() {
   const { 
-    categorias, setCategorias, cuentas, setCuentas, 
-    cargarCategorias, cargarCuentas, ejecutarAccionEstado 
+    grupos, setGrupos, cargarGrupos,
+    categorias, setCategorias, cargarCategorias,
+    cuentas, setCuentas, cargarCuentas, ejecutarAccionEstado 
   } = useAjustes();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [targetModal, setTargetModal] = useState<'categorias' | 'cuentas'>('categorias');
+  const [targetModal, setTargetModal] = useState<TargetT>('categorias');
   const [itemSeleccionado, setItemSeleccionado] = useState<any>(null);
 
   const [accionConfirmacion, setAccionConfirmacion] = useState<{ 
-    target: 'categorias' | 'cuentas', id: string, nombre: string, tipo: 'activar' | 'desactivar' 
+    target: TargetT, id: string, nombre: string, tipo: 'activar' | 'desactivar' 
   } | null>(null);
 
-  const handleAbrirAlta = (target: 'categorias' | 'cuentas') => { setTargetModal(target); setItemSeleccionado(null); setModalOpen(true); };
-  const handleAbrirEdicion = (target: 'categorias' | 'cuentas', item: any) => { setTargetModal(target); setItemSeleccionado(item); setModalOpen(true); };
-  const handleToggleEstado = (target: 'categorias' | 'cuentas', id: string, nombre: string, tipo: 'activar' | 'desactivar') => {
+  const [alerta, setAlerta] = useState<{ titulo: string, mensaje: string } | null>(null);
+
+  const handleAbrirAlta = (target: TargetT) => { setTargetModal(target); setItemSeleccionado(null); setModalOpen(true); };
+  const handleAbrirEdicion = (target: TargetT, item: any) => { setTargetModal(target); setItemSeleccionado(item); setModalOpen(true); };
+  
+  const handleToggleEstado = (target: TargetT, id: string, nombre: string, tipo: 'activar' | 'desactivar') => {
+    // VALIDACIÓN: No desactivar un grupo si tiene categorías.
+    if (target === 'grupos' && tipo === 'desactivar') {
+      const enUso = categorias.some(c => c.grupo_id === id && c.activo);
+      if (enUso) {
+        setAlerta({
+          titulo: "Grupo en uso",
+          mensaje: `No puedes desactivar el grupo "${nombre}" porque tiene categorías activas asignadas. Reasígnalas o desactívalas primero.`
+        });
+        return;
+      }
+    }
     setAccionConfirmacion({ target, id, nombre, tipo });
   };
 
@@ -34,6 +52,12 @@ export default function Ajustes() {
     setAccionConfirmacion(null);
   };
 
+  const onSuccessModal = () => {
+    if (targetModal === 'grupos') cargarGrupos();
+    if (targetModal === 'categorias') cargarCategorias();
+    if (targetModal === 'cuentas') cargarCuentas();
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-slate-200 dark:border-neutral-700 pb-6">
@@ -43,14 +67,18 @@ export default function Ajustes() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Ajustes Generales</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Configura y personaliza tus categorías y cuentas (Arrastra para reordenar)</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Configura y personaliza tus catálogos (Arrastra para reordenar)</p>
           </div>
         </div>
       </div>
 
       <TogglePendientes />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <CatalogoMaestro 
+          titulo="Catálogo de Grupos" target="grupos" items={grupos} setItems={setGrupos}
+          onReload={cargarGrupos} onAbrirAlta={handleAbrirAlta} onAbrirEdicion={handleAbrirEdicion} onToggleEstado={handleToggleEstado}
+        />
         <CatalogoMaestro 
           titulo="Catálogo de Categorías" target="categorias" items={categorias} setItems={setCategorias}
           onReload={cargarCategorias} onAbrirAlta={handleAbrirAlta} onAbrirEdicion={handleAbrirEdicion} onToggleEstado={handleToggleEstado}
@@ -61,7 +89,12 @@ export default function Ajustes() {
         />
       </div>
 
-      <ModalAjusteMaestro isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={targetModal === 'categorias' ? cargarCategorias : cargarCuentas} target={targetModal} itemAEditar={itemSeleccionado} />
+      {/* Le pasamos "grupos" al modal para que pueda usarlos en el select de Categorías */}
+      <ModalAjusteMaestro 
+        isOpen={modalOpen} onClose={() => setModalOpen(false)} 
+        onSuccess={onSuccessModal} target={targetModal} 
+        itemAEditar={itemSeleccionado} grupos={grupos} 
+      />
       
       <ModalConfirmacion 
         isOpen={!!accionConfirmacion} onClose={() => setAccionConfirmacion(null)} onConfirm={ejecutarAccionConfirmada} 
@@ -69,6 +102,13 @@ export default function Ajustes() {
         mensaje={accionConfirmacion?.tipo === 'desactivar' ? `¿Estás seguro de que deseas desactivar "${accionConfirmacion?.nombre}"? Dejará de aparecer en los selectores.` : `Vas a reactivar "${accionConfirmacion?.nombre}". Volverá a estar disponible para nuevos registros.`} 
         textoBoton={accionConfirmacion?.tipo === 'desactivar' ? "Desactivar" : "Reactivar"} 
         variante={accionConfirmacion?.tipo === 'desactivar' ? 'danger' : 'success'} 
+      />
+
+      <ModalAlerta 
+        isOpen={!!alerta}
+        onClose={() => setAlerta(null)}
+        titulo={alerta?.titulo || ''}
+        mensaje={alerta?.mensaje || ''}
       />
     </div>
   );

@@ -10,7 +10,7 @@ pub struct SuscripcionDTO {
     pub fecha_inicio: String,
     pub fecha_proxima_renovacion: String,
     pub periodicidad: String,
-    pub activo: bool,
+    pub activo: Option<bool>,
 }
 
 #[derive(Deserialize)]

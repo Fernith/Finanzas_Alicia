@@ -1,22 +1,57 @@
-// Interfaz base compartida por todas las operaciones
+// ----------------------------------------------------
+// OPERACIONES BASE (Gastos e Ingresos)
+// ----------------------------------------------------
 export interface TransaccionBase {
   id: string;
   fecha: string;
   cantidad: number;
-  categoria: string;
-  cuenta: string;
-  descripcion?: string; // Ahora todas usan descripcion
-  pendiente: boolean;   // El nuevo campo
+  categoria_id: string; // Ahora usamos los IDs reales de Supabase
+  categoria?: string;   // Nombre para mostrar en la UI
+  cuenta_id: string;    // Ahora usamos los IDs reales de Supabase
+  cuenta?: string;      // Nombre para mostrar en la UI
+  descripcion?: string;
+  pendiente: boolean;
 }
 
 export interface Gasto extends TransaccionBase {}
+export interface Ingreso extends TransaccionBase {}
 
-export interface Ingreso extends TransaccionBase {
-  campo_extra_ingreso?: string; 
+// ----------------------------------------------------
+// NUEVO MODELO DE INVERSIONES
+// ----------------------------------------------------
+export interface Activo {
+  ticker: string;
+  nombre: string;
+  categoria_id?: string;
 }
 
-export interface Inversion extends TransaccionBase {
-  categoria_id: string;
+export interface TransaccionInversion {
+  id: string;
+  fecha_compra: string;
+  euros_invertidos: number;
+  activo_ticker: string;
+  precio_compra_unidad: number;
+  participaciones_compradas: number;
+}
+
+// ----------------------------------------------------
+// SUSCRIPCIONES Y METAS
+// ----------------------------------------------------
+export interface Suscripcion {
+  id: string;
+  nombre: string;
+  cantidad: number;
   cuenta_id: string;
-  color: string;
+  cuenta_nombre?: string;
+  fecha_inicio: string;
+  fecha_proxima_renovacion: string;
+  periodicidad: '30_DIAS' | 'MENSUAL' | 'ANUAL';
+  activo: boolean;
+}
+
+export interface MetaAhorro {
+  id: string;
+  nombre: string;
+  objetivo: number;
+  color?: string;
 }

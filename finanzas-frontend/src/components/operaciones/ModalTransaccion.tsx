@@ -20,7 +20,6 @@ export default function ModalTransaccion({ isOpen, onClose, onSuccess, transacci
   const [categoriaId, setCategoriaId] = useState('');
   const [cuentaId, setCuentaId] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [campoExtra, setCampoExtra] = useState('');
   const [pendiente, setPendiente] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
@@ -38,7 +37,6 @@ export default function ModalTransaccion({ isOpen, onClose, onSuccess, transacci
         setFecha(transaccionAEditar.fecha || hoy);
         setCantidad(String(transaccionAEditar.cantidad || ''));
         setDescripcion(transaccionAEditar.descripcion || '');
-        setCampoExtra(transaccionAEditar.campo_extra_ingreso || '');
         setPendiente(transaccionAEditar.pendiente || false);
         setCategoriaId('');
         setCuentaId('');
@@ -46,7 +44,6 @@ export default function ModalTransaccion({ isOpen, onClose, onSuccess, transacci
         setFecha(hoy);
         setCantidad('');
         setDescripcion('');
-        setCampoExtra('');
         setPendiente(false);
         setCategoriaId('');
         setCuentaId('');
@@ -105,7 +102,7 @@ export default function ModalTransaccion({ isOpen, onClose, onSuccess, transacci
   };
   const tema = getTema();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!categoriaId || !cuentaId) { alert('Por favor, selecciona una categoría y cuenta.'); return; }
     
@@ -115,7 +112,6 @@ export default function ModalTransaccion({ isOpen, onClose, onSuccess, transacci
     if (isNaN(cantidadLimpia) || cantidadLimpia <= 0) { alert('Introduce una cantidad válida.'); setEnviando(false); return; }
 
     const payload: any = { fecha, cantidad: cantidadLimpia, categoria_id: categoriaId, cuenta_id: cuentaId, descripcion: descripcion.trim() || null, pendiente };
-    if (tipo === 'INGRESO') payload.campo_extra_ingreso = campoExtra.trim() || null;
 
     const urls = { GASTO: '/api/gastos', INGRESO: '/api/ingresos', INVERSION: '/api/inversiones' };
     const url = transaccionAEditar ? `${urls[tipo]}/${transaccionAEditar.id}` : urls[tipo];
@@ -190,13 +186,6 @@ export default function ModalTransaccion({ isOpen, onClose, onSuccess, transacci
               {cuentas.map(cta => <option key={cta.id} value={cta.id}>{cta.nombre}</option>)}
             </select>
           </div>
-
-          {tipo === 'INGRESO' && (
-            <div>
-              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2 mb-1.5"><Info size={16} className="text-slate-400"/> Info Extra</label>
-              <input type="text" placeholder="Ej. Nómina, Venta..." value={campoExtra} onChange={e => setCampoExtra(e.target.value)} className={inputClases} />
-            </div>
-          )}
 
           <div>
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2 mb-1.5"><AlignLeft size={16} className="text-slate-400"/> Descripción</label>

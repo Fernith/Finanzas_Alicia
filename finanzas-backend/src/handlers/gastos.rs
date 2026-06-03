@@ -58,7 +58,15 @@ pub async fn obtener_gastos(
 pub async fn obtener_categorias_gastos(State(pool): State<PgPool>) -> impl IntoResponse {
     let rows = sqlx::query_as!(
         MaestroDTO,
-        r#"SELECT id::text as "id!", nombre, color, activo FROM categorias WHERE tipo_operacion_id = 'GASTO'::tipo_operacion_enum ORDER BY orden ASC, nombre ASC"#
+        r#"SELECT 
+            c.id::text as "id!", 
+            c.nombre, 
+            g.color as "color", 
+            c.activo 
+           FROM categorias c
+           LEFT JOIN grupos g ON c.grupo_id = g.id
+           WHERE c.tipo_operacion_id = 'GASTO'::tipo_operacion_enum 
+           ORDER BY c.orden ASC, c.nombre ASC"#
     ).fetch_all(&pool).await;
 
     match rows { Ok(cats) => Json(cats).into_response(), Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response() }

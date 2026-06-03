@@ -54,10 +54,17 @@ async fn main() {
         .route("/api/ajustes/categorias", axum::routing::get(handlers::ajustes::listar_categorias).post(handlers::ajustes::crear_categoria))
         .route("/api/ajustes/categorias/:id", axum::routing::put(handlers::ajustes::modificar_categoria).delete(handlers::ajustes::eliminar_categoria_logico))
         .route("/api/ajustes/categorias/:id/activar", axum::routing::put(handlers::ajustes::reactivar_categoria))
+        .route("/api/ajustes/categorias/reordenar", axum::routing::put(handlers::ajustes::reordenar_categorias))
         
         .route("/api/ajustes/cuentas", axum::routing::get(handlers::ajustes::listar_cuentas).post(handlers::ajustes::crear_cuenta))
         .route("/api/ajustes/cuentas/:id", axum::routing::put(handlers::ajustes::modificar_cuenta).delete(handlers::ajustes::eliminar_cuenta_logico))
         .route("/api/ajustes/cuentas/:id/activar", axum::routing::put(handlers::ajustes::reactivar_cuenta))
+        .route("/api/ajustes/cuentas/reordenar", axum::routing::put(handlers::ajustes::reordenar_cuentas))
+
+        .route("/api/ajustes/grupos", axum::routing::get(handlers::ajustes::listar_grupos).post(handlers::ajustes::crear_grupo))
+        .route("/api/ajustes/grupos/:id", axum::routing::put(handlers::ajustes::modificar_grupo).delete(handlers::ajustes::eliminar_grupo_logico))
+        .route("/api/ajustes/grupos/:id/activar", axum::routing::put(handlers::ajustes::reactivar_grupo))
+        .route("/api/ajustes/grupos/reordenar", axum::routing::put(handlers::ajustes::reordenar_grupos))
 
         // --- RUTAS DE BALANCE ---
         .route("/api/balance/anual", axum::routing::get(handlers::balance::obtener_balance_anual))
@@ -69,11 +76,11 @@ async fn main() {
         .route("/api/ahorros/metas/:id/movimientos", axum::routing::post(handlers::ahorros::agregar_movimiento_meta))
 
         // --- RUTAS DE INVERSIONES ---
-        .route("/api/inversiones/categorias", axum::routing::get(handlers::inversiones::obtener_categorias_inversiones))
-        .route("/api/inversiones/cuentas", axum::routing::get(handlers::inversiones::obtener_cuentas_inversiones))
-        .route("/api/inversiones", axum::routing::get(handlers::inversiones::listar_inversiones).post(handlers::inversiones::crear_inversion))
-        .route("/api/inversiones/:id", axum::routing::put(handlers::inversiones::modificar_inversion).delete(handlers::inversiones::eliminar_inversion))
-        .route("/api/inversiones/:id/completar", axum::routing::patch(handlers::inversiones::completar_operacion))
+        // .route("/api/inversiones/categorias", axum::routing::get(handlers::inversiones::obtener_categorias_inversiones))
+        // .route("/api/inversiones/cuentas", axum::routing::get(handlers::inversiones::obtener_cuentas_inversiones))
+        // .route("/api/inversiones", axum::routing::get(handlers::inversiones::listar_inversiones).post(handlers::inversiones::crear_inversion))
+        // .route("/api/inversiones/:id", axum::routing::put(handlers::inversiones::modificar_inversion).delete(handlers::inversiones::eliminar_inversion))
+        // .route("/api/inversiones/:id/completar", axum::routing::patch(handlers::inversiones::completar_operacion))
 
         // --- RUTAS DE LIQUIDEZ ---
         .route("/api/liquidez/saldos", axum::routing::get(handlers::liquidez::obtener_saldos_actuales).post(handlers::liquidez::registrar_saldo))
@@ -84,14 +91,9 @@ async fn main() {
         // CONFIGURACION
         .route("/api/configuracion", axum::routing::get(handlers::ajustes::obtener_configuracion).put(handlers::ajustes::actualizar_configuracion))
 
-        // NUEVAS RUTAS DE REORDENAR (Añade estas 2 líneas):
-        .route("/api/ajustes/categorias/reordenar", axum::routing::put(handlers::ajustes::reordenar_categorias))
-        .route("/api/ajustes/cuentas/reordenar", axum::routing::put(handlers::ajustes::reordenar_cuentas))
-
         // SUSCRIPCIONES
         .route("/api/suscripciones", axum::routing::get(handlers::suscripciones::listar_suscripciones).post(handlers::suscripciones::crear_suscripcion))
         .route("/api/suscripciones/:id", axum::routing::put(handlers::suscripciones::modificar_suscripcion).delete(handlers::suscripciones::eliminar_suscripcion))
-
 
         .fallback_service(frontend)
 

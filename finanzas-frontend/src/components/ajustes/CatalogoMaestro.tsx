@@ -5,11 +5,11 @@ type CatalogoProps = {
   titulo: string;
   items: any[];
   setItems: (items: any[]) => void;
-  target: 'categorias' | 'cuentas';
+  target: 'grupos' | 'categorias' | 'cuentas';
   onReload: () => void;
-  onAbrirAlta: (target: 'categorias' | 'cuentas') => void;
-  onAbrirEdicion: (target: 'categorias' | 'cuentas', item: any) => void;
-  onToggleEstado: (target: 'categorias' | 'cuentas', id: string, nombre: string, tipo: 'activar' | 'desactivar') => void;
+  onAbrirAlta: (target: 'grupos' | 'categorias' | 'cuentas') => void;
+  onAbrirEdicion: (target: 'grupos' | 'categorias' | 'cuentas', item: any) => void;
+  onToggleEstado: (target: 'grupos' | 'categorias' | 'cuentas', id: string, nombre: string, tipo: 'activar' | 'desactivar') => void;
 };
 
 export default function CatalogoMaestro({ titulo, items, setItems, target, onReload, onAbrirAlta, onAbrirEdicion, onToggleEstado }: CatalogoProps) {
@@ -91,7 +91,11 @@ export default function CatalogoMaestro({ titulo, items, setItems, target, onRel
                 <GripVertical size={16} className="text-slate-400 shrink-0 hover:text-slate-600 dark:hover:text-slate-200" />
                 <span className="w-4 h-4 rounded-full shadow-inner border border-black/10 shrink-0" style={{ backgroundColor: item.color }}></span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{item.nombre}</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    {item.nombre}
+                    {/* AQUÍ ESTÁ EL CAMBIO PARA MOSTRAR EL GRUPO EN CATEGORÍAS */}
+                    {item.grupo_nombre && <span className="ml-1 text-xs font-normal text-slate-400">({item.grupo_nombre})</span>}
+                  </p>
                   <div className="flex gap-1 mt-1 flex-wrap">
                     {typeof item.tipo_operacion_id === 'string' && (
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${item.tipo_operacion_id === 'GASTO' ? 'bg-red-50 text-red-600 dark:bg-red-950/30' : item.tipo_operacion_id === 'INGRESO' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30' : 'bg-amber-50 text-amber-600 dark:bg-amber-950/30'}`}>
