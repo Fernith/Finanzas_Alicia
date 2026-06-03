@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, DollarSign, Tag, CreditCard, AlignLeft, Info } from 'lucide-react';
+import { X, Calendar, DollarSign, Tag, CreditCard, AlignLeft } from 'lucide-react';
 
 export type TipoTransaccion = 'GASTO' | 'INGRESO' | 'INVERSION';
 

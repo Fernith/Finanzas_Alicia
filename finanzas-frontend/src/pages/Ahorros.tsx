@@ -5,12 +5,22 @@ import ModalMetaAhorro from '../components/ahorros/ModalMetaAhorro';
 import ModalHistorialMeta from '../components/ahorros/ModalHistorialMeta';
 import ModalMovimientoMeta from '../components/ahorros/ModalMovimientoMeta';
 import ModalFinalizarMeta from '../components/ahorros/ModalFinalizarMeta';
-import AhorrosResumenCabecera from '../components/ahorros/AhorrosResumenCabecera';
 import MetaCard from '../components/ahorros/MetaCard';
 import { useAhorros } from '../hooks/useAhorros';
 
+// Importamos los nuevos componentes
+import AhorrosHeader from '../components/ahorros/AhorrosHeader';
+import CalculadoraProyecciones from '../components/ahorros/CalculadoraProyecciones';
+
 export default function Ahorros() {
-  const { metas, resumen, totalReservadoMetas, dineroDisponibleGastar, cargarDatos, eliminarMeta } = useAhorros();
+  const { 
+    metas, 
+    totalReservadoMetas, 
+    dineroPorAhorrar, 
+    progresoGlobal, 
+    cargarDatos, 
+    eliminarMeta 
+  } = useAhorros();
   
   const [modalOpen, setModalOpen] = useState(false);
   const [metaAEditar, setMetaAEditar] = useState<any>(null);
@@ -21,8 +31,10 @@ export default function Ahorros() {
   const [modalFinalizar, setModalFinalizar] = useState<any>(null);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-12 w-full">
-      <div className="flex flex-col justify-between items-start border-b border-slate-200 dark:border-neutral-700 pb-6">
+    <div className="space-y-4 animate-in fade-in duration-500 pb-12 w-full">
+      
+      {/* Cabecera Estática (Icono y Título) */}
+      <div className="flex flex-col justify-between items-start pb-2">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-gradient-to-br from-purple-100 to-fuchsia-200 dark:from-purple-900/40 dark:to-fuchsia-900/20 rounded-2xl border border-purple-200/50 dark:border-purple-800/50">
             <PiggyBank className="text-purple-600 dark:text-purple-400" size={32} />
@@ -34,13 +46,14 @@ export default function Ahorros() {
         </div>
       </div>
 
-      <AhorrosResumenCabecera 
-        dinero_liquido={resumen.dinero_liquido} 
-        dinero_invertido={resumen.dinero_invertido} 
-        totalReservadoMetas={totalReservadoMetas} 
-        dineroDisponibleGastar={dineroDisponibleGastar} 
+      {/* NUEVO HEADER Y CAJA DE MÉTRICAS DORADA */}
+      <AhorrosHeader 
+        totalReservadoMetas={totalReservadoMetas}
+        dineroPorAhorrar={dineroPorAhorrar}
+        progresoGlobal={progresoGlobal}
       />
 
+      {/* ZONA DE METAS DE AHORRO */}
       <div className="space-y-6">
         <div className="flex justify-between items-end border-b border-slate-200 dark:border-neutral-700 pb-4">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -66,9 +79,14 @@ export default function Ahorros() {
         </div>
       </div>
 
+      {/* NUEVA CALCULADORA DE PROYECCIONES (Sólo se muestra si hay metas) */}
+      {metas.length > 0 && (
+        <CalculadoraProyecciones metas={metas} />
+      )}
+
+      {/* Modales */}
       <ModalMetaAhorro isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={cargarDatos} metaAEditar={metaAEditar} />
       <ModalConfirmacion isOpen={!!itemAEliminar} onClose={() => setItemAEliminar(null)} onConfirm={() => { eliminarMeta(itemAEliminar.id); setItemAEliminar(null); }} titulo="Eliminar meta de ahorro" mensaje={`¿Estás seguro de eliminar el sobre "${itemAEliminar?.nombre}"? El dinero volverá a estar libre.`} />
-      
       <ModalHistorialMeta isOpen={!!modalHistorial} onClose={() => setModalHistorial(null)} meta={modalHistorial} />
       <ModalMovimientoMeta isOpen={!!modalMovimiento} onClose={() => setModalMovimiento(null)} onSuccess={cargarDatos} meta={modalMovimiento?.meta} tipo={modalMovimiento?.tipo} />
       <ModalFinalizarMeta isOpen={!!modalFinalizar} onClose={() => setModalFinalizar(null)} onSuccess={cargarDatos} meta={modalFinalizar} />

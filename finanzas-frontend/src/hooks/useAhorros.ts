@@ -11,8 +11,14 @@ export function useAhorros() {
 
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
 
-  const totalReservadoMetas = useMemo(() => metas.reduce((acc, m) => acc + m.ahorrado, 0), [metas]);
+  // Cálculos globales
+  const totalReservadoMetas = useMemo(() => metas.reduce((acc, m) => acc + (Number(m.ahorrado) || 0), 0), [metas]);
   const dineroDisponibleGastar = resumen.dinero_liquido - totalReservadoMetas;
+
+  // Nuevas métricas para la cabecera
+  const objetivoTotal = useMemo(() => metas.reduce((acc, m) => acc + (Number(m.objetivo) || 0), 0), [metas]);
+  const dineroPorAhorrar = Math.max(0, objetivoTotal - totalReservadoMetas); // Lo que falta
+  const progresoGlobal = objetivoTotal > 0 ? (totalReservadoMetas / objetivoTotal) * 100 : 0;
 
   const eliminarMeta = async (id: string) => {
     try {
@@ -29,6 +35,7 @@ export function useAhorros() {
 
   return {
     metas, resumen, totalReservadoMetas, dineroDisponibleGastar,
+    objetivoTotal, dineroPorAhorrar, progresoGlobal, // Métricas expuestas
     cargarDatos, eliminarMeta
   };
 }
