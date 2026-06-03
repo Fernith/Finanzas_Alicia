@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, Save } from 'lucide-react';
 
 type Props = { 
@@ -11,14 +11,17 @@ type Props = {
 
 export default function ModalSuscripcion({ isOpen, onClose, onSuccess, suscripcionAEditar, cuentas }: Props) {
   const [form, setForm] = useState({ 
-    nombre: '', 
-    cantidad: '', 
-    cuenta_id: '', 
-    fecha_inicio: '', 
-    fecha_proxima_renovacion: '', 
-    periodicidad: 'MENSUAL', 
-    activo: true 
+    nombre: '', cantidad: '', cuenta_id: '', fecha_inicio: '', 
+    fecha_proxima_renovacion: '', periodicidad: 'MENSUAL', activo: true 
   });
+
+  // Filtramos las cuentas: solo las activas que soportan 'GASTO' (o la que ya tenía seleccionada)
+  const cuentasValidas = useMemo(() => {
+    return cuentas.filter(c => 
+      (c.activo && c.tipos_operacion?.includes('GASTO')) || 
+      (suscripcionAEditar && c.id === suscripcionAEditar.cuenta_id)
+    );
+  }, [cuentas, suscripcionAEditar]);
 
   useEffect(() => {
     if (suscripcionAEditar) { 
@@ -27,14 +30,14 @@ export default function ModalSuscripcion({ isOpen, onClose, onSuccess, suscripci
       setForm({ 
         nombre: '', 
         cantidad: '', 
-        cuenta_id: cuentas[0]?.id || '', 
+        cuenta_id: cuentasValidas.length > 0 ? cuentasValidas[0].id : '', 
         fecha_inicio: new Date().toISOString().split('T')[0], 
         fecha_proxima_renovacion: '', 
         periodicidad: 'MENSUAL', 
         activo: true 
       }); 
     }
-  }, [suscripcionAEditar, isOpen, cuentas]);
+  }, [suscripcionAEditar, isOpen, cuentasValidas]);
 
   useEffect(() => {
     if (!suscripcionAEditar && form.fecha_inicio && !form.fecha_proxima_renovacion) {
@@ -113,7 +116,7 @@ export default function ModalSuscripcion({ isOpen, onClose, onSuccess, suscripci
           <div>
             <label className="block text-sm font-semibold mb-1 dark:text-slate-300">Cuenta de Cobro</label>
             <select required value={form.cuenta_id} onChange={e => setForm({...form, cuenta_id: e.target.value})} className="w-full p-2.5 bg-slate-100 dark:bg-neutral-800 rounded-lg outline-none focus:ring-2 focus:ring-slate-500/50 dark:text-white cursor-pointer">
-              {cuentas.map(c => (<option key={c.id} value={c.id}>{c.nombre}</option>))}
+              {cuentasValidas.map(c => (<option key={c.id} value={c.id}>{c.nombre}</option>))}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">

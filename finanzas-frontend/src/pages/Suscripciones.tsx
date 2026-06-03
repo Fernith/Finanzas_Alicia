@@ -13,6 +13,9 @@ export default function Suscripciones() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [suscripcionAEditar, setSuscripcionAEditar] = useState<any>(null);
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
+  
+  // NUEVO ESTADO PARA PAUSAR/REACTIVAR
+  const [subParaToggle, setSubParaToggle] = useState<any>(null);
 
   useEffect(() => { fetch('/api/ajustes/cuentas').then(res => res.json()).then(setCuentas); }, []);
 
@@ -78,7 +81,10 @@ export default function Suscripciones() {
                   <td className="p-4 text-sm text-slate-600 dark:text-slate-400">{s.fecha_proxima_renovacion.split('-').reverse().join('/')}</td>
                   <td className="p-4 text-sm text-slate-600 dark:text-slate-400">{s.cuenta_nombre}</td>
                   <td className="p-4 text-right space-x-2">
-                    <button onClick={() => toggleActivo(s)} className={`p-1.5 rounded-lg transition-colors ${s.activo ? 'text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30' : 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'}`} title={s.activo ? "Pausar" : "Reactivar"}>{s.activo ? <PowerOff size={16}/> : <Power size={16}/>}</button>
+                    {/* Botón actualizado para abrir el modal de confirmación */}
+                    <button onClick={() => setSubParaToggle(s)} className={`p-1.5 rounded-lg transition-colors ${s.activo ? 'text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30' : 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'}`} title={s.activo ? "Pausar" : "Reactivar"}>
+                      {s.activo ? <PowerOff size={16}/> : <Power size={16}/>}
+                    </button>
                     <button onClick={() => { setSuscripcionAEditar(s); setModalAbierto(true); }} className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg"><Pencil size={16}/></button>
                     <button onClick={() => setIdAEliminar(s.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={16}/></button>
                   </td>
@@ -91,7 +97,24 @@ export default function Suscripciones() {
       </div>
 
       <ModalSuscripcion isOpen={modalAbierto} onClose={() => { setModalAbierto(false); setSuscripcionAEditar(null); }} onSuccess={cargarSuscripciones} suscripcionAEditar={suscripcionAEditar} cuentas={cuentas} />
-      <ModalConfirmacion isOpen={!!idAEliminar} onClose={() => setIdAEliminar(null)} onConfirm={() => { if(idAEliminar) eliminarSuscripcion(idAEliminar); setIdAEliminar(null); }} mensaje="¿Estás seguro de que deseas eliminar esta suscripción permanentemente?" />
+      
+      <ModalConfirmacion 
+        isOpen={!!idAEliminar} 
+        onClose={() => setIdAEliminar(null)} 
+        onConfirm={() => { if(idAEliminar) eliminarSuscripcion(idAEliminar); setIdAEliminar(null); }} 
+        mensaje="¿Estás seguro de que deseas eliminar esta suscripción permanentemente?" 
+      />
+
+      {/* NUEVO MODAL DE CONFIRMACIÓN PARA PAUSAR/REACTIVAR */}
+      <ModalConfirmacion 
+        isOpen={!!subParaToggle} 
+        onClose={() => setSubParaToggle(null)} 
+        onConfirm={() => { if (subParaToggle) { toggleActivo(subParaToggle); setSubParaToggle(null); } }} 
+        titulo={subParaToggle?.activo ? "Pausar suscripción" : "Reactivar suscripción"}
+        mensaje={subParaToggle?.activo ? `¿Seguro que deseas pausar "${subParaToggle?.nombre}"? No se generarán gastos automáticos hasta que la reactives.` : `¿Deseas reactivar "${subParaToggle?.nombre}"? Volverá a cobrarse automáticamente en su próxima fecha.`}
+        textoBoton={subParaToggle?.activo ? "Pausar" : "Reactivar"}
+        variante={subParaToggle?.activo ? "warning" : "success"}
+      />
     </div>
   );
 }

@@ -7,7 +7,7 @@ type Props = {
   titulo?: string;
   mensaje?: string;
   textoBoton?: string;
-  variante?: 'danger' | 'success'; 
+  variante?: 'danger' | 'success' | 'warning'; 
 };
 
 export default function ModalConfirmacion({ 

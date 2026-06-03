@@ -6,6 +6,7 @@ import TogglePendientes from '../components/ajustes/TogglePendientes';
 import CatalogoMaestro from '../components/ajustes/CatalogoMaestro';
 import ModalAlerta from '../components/general/ModalAlerta';
 import { useAjustes } from '../hooks/useAjustes';
+import { useSuscripciones } from '../hooks/useSuscripciones';
 
 type TargetT = 'grupos' | 'categorias' | 'cuentas';
 
@@ -26,21 +27,30 @@ export default function Ajustes() {
 
   const [alerta, setAlerta] = useState<{ titulo: string, mensaje: string } | null>(null);
 
+  const { suscripciones } = useSuscripciones();
+
   const handleAbrirAlta = (target: TargetT) => { setTargetModal(target); setItemSeleccionado(null); setModalOpen(true); };
   const handleAbrirEdicion = (target: TargetT, item: any) => { setTargetModal(target); setItemSeleccionado(item); setModalOpen(true); };
   
   const handleToggleEstado = (target: TargetT, id: string, nombre: string, tipo: 'activar' | 'desactivar') => {
-    // VALIDACIÓN: No desactivar un grupo si tiene categorías.
+    // VALIDACIÓN 1: No desactivar un grupo si tiene categorías.
     if (target === 'grupos' && tipo === 'desactivar') {
       const enUso = categorias.some(c => c.grupo_id === id && c.activo);
       if (enUso) {
-        setAlerta({
-          titulo: "Grupo en uso",
-          mensaje: `No puedes desactivar el grupo "${nombre}" porque tiene categorías activas asignadas. Reasígnalas o desactívalas primero.`
-        });
+        setAlerta({ titulo: "Grupo en uso", mensaje: `No puedes desactivar el grupo "${nombre}" porque tiene categorías activas asignadas. Reasígnalas o desactívalas primero.` });
         return;
       }
     }
+
+    // VALIDACIÓN 2: No desactivar una cuenta si tiene suscripciones activas.
+    if (target === 'cuentas' && tipo === 'desactivar') {
+      const enUso = suscripciones.some((s: any) => s.cuenta_id === id && s.activo);
+      if (enUso) {
+        setAlerta({ titulo: "Cuenta en uso", mensaje: `No puedes desactivar la cuenta "${nombre}" porque tiene suscripciones activas de cobro automático. Cámbialas de cuenta o cancélalas primero.` });
+        return;
+      }
+    }
+
     setAccionConfirmacion({ target, id, nombre, tipo });
   };
 
