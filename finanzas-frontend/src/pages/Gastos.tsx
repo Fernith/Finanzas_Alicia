@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { TrendingDown, Search, Filter, X } from 'lucide-react';
 import { useTransacciones } from '../hooks/useTransacciones';
 import { formatearMoneda } from '../utils/formatters';
