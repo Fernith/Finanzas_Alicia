@@ -23,6 +23,8 @@ export interface Activo {
   ticker: string;
   nombre: string;
   categoria_id?: string;
+  categoria_nombre?: string;
+  color?: string;
 }
 
 export interface TransaccionInversion {
@@ -30,8 +32,6 @@ export interface TransaccionInversion {
   fecha_compra: string;
   euros_invertidos: number;
   activo_ticker: string;
-  precio_compra_unidad: number;
-  participaciones_compradas: number;
 }
 
 // ----------------------------------------------------

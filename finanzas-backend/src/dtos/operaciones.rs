@@ -47,8 +47,7 @@ pub struct IngresoDTO {
     pub cantidad: f64, 
     pub categoria: String, 
     pub cuenta: String, 
-    pub descripcion: Option<String>, 
-    // ELIMINADO: pub campo_extra_ingreso: Option<String>, 
+    pub descripcion: Option<String>,
     pub pendiente: bool 
 }
 
@@ -62,30 +61,3 @@ pub struct NuevoIngresoDTO {
     // ELIMINADO: pub campo_extra_ingreso: Option<String>, 
     pub pendiente: bool 
 }
-
-// --- INVERSIONES (EN CUARENTENA) ---
-/*
-#[derive(Serialize)]
-pub struct InversionDTO { 
-    pub id: String, 
-    pub fecha: String, 
-    pub cantidad: f64, 
-    pub categoria_id: String, 
-    pub categoria: String, 
-    pub cuenta_id: String, 
-    pub cuenta: String, 
-    pub descripcion: Option<String>, 
-    pub color: String, 
-    pub pendiente: bool 
-}
-
-#[derive(Deserialize)]
-pub struct UpsertInversionDTO { 
-    pub fecha: String, 
-    pub cantidad: f64, 
-    pub categoria_id: String, 
-    pub cuenta_id: String, 
-    pub descripcion: Option<String>, 
-    pub pendiente: bool 
-}
-*/

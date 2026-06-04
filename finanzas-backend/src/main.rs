@@ -76,11 +76,12 @@ async fn main() {
         .route("/api/ahorros/metas/:id/movimientos", axum::routing::post(handlers::ahorros::agregar_movimiento_meta))
 
         // --- RUTAS DE INVERSIONES ---
-        // .route("/api/inversiones/categorias", axum::routing::get(handlers::inversiones::obtener_categorias_inversiones))
-        // .route("/api/inversiones/cuentas", axum::routing::get(handlers::inversiones::obtener_cuentas_inversiones))
-        // .route("/api/inversiones", axum::routing::get(handlers::inversiones::listar_inversiones).post(handlers::inversiones::crear_inversion))
-        // .route("/api/inversiones/:id", axum::routing::put(handlers::inversiones::modificar_inversion).delete(handlers::inversiones::eliminar_inversion))
-        // .route("/api/inversiones/:id/completar", axum::routing::patch(handlers::inversiones::completar_operacion))
+        // --- RUTAS DE INVERSIONES (NUEVO MODELO) ---
+        .route("/api/inversiones/activos", axum::routing::get(handlers::inversiones::listar_activos).post(handlers::inversiones::crear_activo))
+        .route("/api/inversiones/activos/:ticker", axum::routing::put(handlers::inversiones::modificar_activo).delete(handlers::inversiones::eliminar_activo))
+        
+        .route("/api/inversiones/transacciones", axum::routing::get(handlers::inversiones::listar_transacciones).post(handlers::inversiones::crear_transaccion))
+        .route("/api/inversiones/transacciones/:id", axum::routing::put(handlers::inversiones::modificar_transaccion).delete(handlers::inversiones::eliminar_transaccion))
 
         // --- RUTAS DE LIQUIDEZ ---
         .route("/api/liquidez/saldos", axum::routing::get(handlers::liquidez::obtener_saldos_actuales).post(handlers::liquidez::registrar_saldo))

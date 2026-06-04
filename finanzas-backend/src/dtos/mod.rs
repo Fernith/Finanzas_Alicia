@@ -4,3 +4,4 @@ pub mod operaciones;
 pub mod balance;
 pub mod liquidez;
 pub mod suscripciones;
+pub mod transacciones;

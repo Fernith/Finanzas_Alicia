@@ -1,106 +1,72 @@
 import { useState } from 'react';
-import { LineChart, Wallet, Clock } from 'lucide-react';
-import MonthYearSelector from '../components/operaciones/SelectorMesAno';
-import TransactionTable, { type Column } from '../components/operaciones/TransactionTable';
-import ModalConfirmacion from '../components/general/ModalConfirmacion';
-import ModalTransaccion from '../components/operaciones/ModalTransaccion';
-import GraficoResumen from '../components/operaciones/GraficoResumen';
+import { TrendingUp } from 'lucide-react';
+import { useInversiones } from '../hooks/useInversiones';
 import { formatearMoneda } from '../utils/formatters';
-import { useConfig } from '../context/ConfigContext';
-import { useTransacciones } from '../hooks/useTransacciones';
+
+import TablaActivos from '../components/inversiones/TablaActivos';
+import ModalActivoInversion from '../components/inversiones/ModalActivoInversiones';
+import ModalTransaccionInversion from '../components/inversiones/ModalTransaccionInversion';
+import ModalConfirmacion from '../components/general/ModalConfirmacion';
+
+// 1. IMPORTAR NUEVOS COMPONENTES
+import GraficoFlujoInversiones from '../components/inversiones/GraficoFlujoInversiones';
+import CalculadoraInteresCompuesto from '../components/inversiones/CalculadoraInteresCompuesto';
 
 export default function Inversiones() {
-  const { usarPendientes } = useConfig();
+  const { 
+    activosConTransacciones, totalInvertido, flujoMensual, // Sacamos flujoMensual
+    cargarDatos, eliminarTransaccion 
+  } = useInversiones();
   
-  const {
-    mesActual, setMesActual, añoActual, setAñoActual, busquedaGlobal, setBusquedaGlobal,
-    transacciones, categoriasActivas, cuentasActivas, datosGrafico,
-    totalRealMes, totalConPendientes, cargarTransacciones, eliminarTransaccion, marcarCompletado
-  } = useTransacciones('inversiones');
-
-  const [modalAbierto, setModalAbierto] = useState(false);
-  const [inversionAEditar, setInversionAEditar] = useState<any>(null);
-  const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
-
-  const columnasInversiones: Column[] = [
-    { key: 'fecha', label: 'Fecha', sortable: true },
-    { key: 'cantidad', label: 'Cantidad', sortable: true },
-    { key: 'categoria', label: 'Activo', filterable: true },
-    { key: 'cuenta', label: 'Cuenta', filterable: true },
-    { key: 'descripcion', label: 'Descripción' }
-  ];
+  const [activoAEditar, setActivoAEditar] = useState<any>(null);
+  const [transaccionAEditar, setTransaccionAEditar] = useState<any>(null);
+  const [idTransaccionEliminar, setIdTransaccionEliminar] = useState<string | null>(null);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-slate-200 dark:border-amber-500/30 pb-6">
+    <div className="space-y-8 animate-in fade-in duration-500 w-full pb-12">
+      
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-neutral-200 dark:border-neutral-700 pb-6">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-amber-100 to-orange-200 dark:from-amber-900/40 dark:to-orange-900/20 rounded-2xl shadow-sm border border-amber-200/50 dark:border-amber-800/50">
-            <LineChart className="text-amber-600 dark:text-amber-400" size={32} />
+          <div className="p-3 bg-gradient-to-br from-indigo-100 to-blue-200 dark:from-indigo-900/40 dark:to-blue-900/20 rounded-2xl border border-indigo-200/50 dark:border-indigo-800/50">
+            <TrendingUp className="text-indigo-600 dark:text-indigo-400" size={32} />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Mis Inversiones</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Gestiona tu portafolio y activos</p>
+            <h1 className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">Portfolio de Inversiones</h1>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Gestión de activos, aportaciones e interés compuesto</p>
           </div>
         </div>
       </div>
 
-      <div className={`grid grid-cols-1 ${usarPendientes ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
-        <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-500/30 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6">
-          <div className="p-4 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">
-            <Wallet size={40} />
-          </div>
-          <div className="flex flex-col justify-center">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] text-center sm:text-left">
-              {busquedaGlobal ? 'Búsqueda Real' : (usarPendientes ? 'Inversión Real Completada' : 'Total invertido este mes')}
-            </p>
-            <p className="text-4xl sm:text-5xl font-black text-amber-600 dark:text-amber-500 mt-1 tabular-nums text-center sm:text-left">
-              {formatearMoneda(totalRealMes)} <span className="text-xl sm:text-2xl font-bold ml-1">€</span>
-            </p>
-          </div>
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+        <div>
+          <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Total Invertido (Aportaciones)</p>
+          <p className="text-4xl font-black text-indigo-600 dark:text-indigo-400">{formatearMoneda(totalInvertido)} €</p>
         </div>
-
-        {usarPendientes && (
-          <div className="bg-white dark:bg-neutral-900 border border-amber-200 dark:border-amber-500/30 rounded-2xl p-6 shadow-sm flex items-center justify-center gap-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-amber-50 dark:bg-amber-900/10 rounded-bl-full -z-10"></div>
-            <div className="p-4 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">
-              <Clock size={40} />
-            </div>
-            <div className="flex flex-col justify-center">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] text-center sm:text-left">
-                {busquedaGlobal ? 'Búsqueda Total (Inc. Pendientes)' : 'Total (Inc. Pendientes)'}
-              </p>
-              <p className="text-4xl sm:text-5xl font-black text-amber-600 dark:text-amber-500 mt-1 tabular-nums text-center sm:text-left">
-                {formatearMoneda(totalConPendientes)} <span className="text-xl sm:text-2xl font-bold ml-1">€</span>
-              </p>
-            </div>
-          </div>
-        )}
+        <div className="p-4 rounded-full bg-indigo-50 dark:bg-neutral-800 text-indigo-500">
+          <TrendingUp size={32} />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-amber-500/30 rounded-2xl shadow-sm flex flex-col overflow-hidden">
-          <div className="p-5 border-b border-slate-200 dark:border-amber-500/30 bg-slate-50/50 dark:bg-neutral-900/50 flex flex-col gap-5">
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Listado de Transacciones</h2>
-            <div className="flex w-full overflow-x-auto pb-1 sm:pb-0">
-              <MonthYearSelector mesSeleccionado={mesActual} añoSeleccionado={añoActual} onMesChange={setMesActual} onAñoChange={setAñoActual} />
-            </div>
-          </div>
+      {/* 2. GRÁFICA DE FLUJO */}
+      <GraficoFlujoInversiones flujoMensual={flujoMensual} />
 
-          <div className="w-full">
-            <TransactionTable 
-              columns={columnasInversiones} data={transacciones} colorTheme="amber" 
-              categoriasDisponibles={categoriasActivas.map(c => c.nombre)} cuentasDisponibles={cuentasActivas.map(c => c.nombre)}
-              onGlobalSearch={setBusquedaGlobal} onEdit={(t) => { setInversionAEditar(t); setModalAbierto(true); }} 
-              onDelete={setIdAEliminar} onMarcarCompletado={marcarCompletado}
-            />
-          </div>
-        </div>
-
-        <GraficoResumen titulo="Resumen de Activos" datosGrafico={datosGrafico} colorBorderTheme="dark:border-amber-500/30" mensajeVacio="No hay inversiones en este mes." />
+      <div>
+        <h2 className="text-lg font-bold text-neutral-800 dark:text-white mb-4">Tus Activos</h2>
+        <TablaActivos 
+          activosConTransacciones={activosConTransacciones} 
+          onEditActivo={setActivoAEditar} 
+          onEditTransaccion={setTransaccionAEditar}
+          onDeleteTransaccion={setIdTransaccionEliminar}
+        />
       </div>
 
-      <ModalTransaccion isOpen={modalAbierto} onClose={() => { setModalAbierto(false); setInversionAEditar(null); }} onSuccess={cargarTransacciones} transaccionAEditar={inversionAEditar} tipoInicial="INVERSION" />
-      <ModalConfirmacion isOpen={!!idAEliminar} onClose={() => setIdAEliminar(null)} onConfirm={() => { if(idAEliminar) eliminarTransaccion(idAEliminar); setIdAEliminar(null); }} mensaje="¿Estás seguro de que deseas eliminar esta inversión permanentemente?" />
-    </div> 
+      {/* 3. CALCULADORA */}
+      <CalculadoraInteresCompuesto />
+
+      <ModalActivoInversion isOpen={!!activoAEditar} onClose={() => setActivoAEditar(null)} onSuccess={cargarDatos} activoAEditar={activoAEditar} />
+      <ModalTransaccionInversion isOpen={!!transaccionAEditar} onClose={() => setTransaccionAEditar(null)} onSuccess={cargarDatos} transaccionAEditar={transaccionAEditar} />
+      <ModalConfirmacion isOpen={!!idTransaccionEliminar} onClose={() => setIdTransaccionEliminar(null)} onConfirm={() => { if(idTransaccionEliminar) eliminarTransaccion(idTransaccionEliminar); setIdTransaccionEliminar(null); }} titulo="Eliminar aportación" mensaje="¿Estás seguro de eliminar esta compra del historial? Se descontará del total invertido de este activo." textoBoton="Eliminar" variante="danger" />
+
+    </div>
   );
 }
