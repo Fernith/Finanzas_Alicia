@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingUp } from 'lucide-react';
+import { Plus, TrendingUp } from 'lucide-react';
 import { useInversiones } from '../hooks/useInversiones';
 import { formatearMoneda } from '../utils/formatters';
 
@@ -18,9 +18,20 @@ export default function Inversiones() {
     cargarDatos, eliminarTransaccion 
   } = useInversiones();
   
+  const [isModalActivoOpen, setIsModalActivoOpen] = useState(false);
   const [activoAEditar, setActivoAEditar] = useState<any>(null);
   const [transaccionAEditar, setTransaccionAEditar] = useState<any>(null);
   const [idTransaccionEliminar, setIdTransaccionEliminar] = useState<string | null>(null);
+
+  const handleEditActivo = (activo: any) => {
+    setActivoAEditar(activo);
+    setIsModalActivoOpen(true);
+  };
+
+  const handleNuevoActivo = () => {
+    setActivoAEditar(null); // Null significa Creación
+    setIsModalActivoOpen(true);
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 w-full pb-12">
@@ -35,6 +46,9 @@ export default function Inversiones() {
             <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Gestión de activos, aportaciones e interés compuesto</p>
           </div>
         </div>
+        <button onClick={handleNuevoActivo} className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md active:scale-95 transition-all">
+          <Plus size={18} /> Nuevo Activo
+        </button>
       </div>
 
       <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-sm flex items-center justify-between">
@@ -54,7 +68,7 @@ export default function Inversiones() {
         <h2 className="text-lg font-bold text-neutral-800 dark:text-white mb-4">Tus Activos</h2>
         <TablaActivos 
           activosConTransacciones={activosConTransacciones} 
-          onEditActivo={setActivoAEditar} 
+          onEditActivo={handleEditActivo} 
           onEditTransaccion={setTransaccionAEditar}
           onDeleteTransaccion={setIdTransaccionEliminar}
         />
@@ -63,7 +77,12 @@ export default function Inversiones() {
       {/* 3. CALCULADORA */}
       <CalculadoraInteresCompuesto />
 
-      <ModalActivoInversion isOpen={!!activoAEditar} onClose={() => setActivoAEditar(null)} onSuccess={cargarDatos} activoAEditar={activoAEditar} />
+      <ModalActivoInversion 
+        isOpen={isModalActivoOpen} 
+        onClose={() => setIsModalActivoOpen(false)} 
+        onSuccess={cargarDatos} 
+        activoAEditar={activoAEditar} 
+      />
       <ModalTransaccionInversion isOpen={!!transaccionAEditar} onClose={() => setTransaccionAEditar(null)} onSuccess={cargarDatos} transaccionAEditar={transaccionAEditar} />
       <ModalConfirmacion isOpen={!!idTransaccionEliminar} onClose={() => setIdTransaccionEliminar(null)} onConfirm={() => { if(idTransaccionEliminar) eliminarTransaccion(idTransaccionEliminar); setIdTransaccionEliminar(null); }} titulo="Eliminar aportación" mensaje="¿Estás seguro de eliminar esta compra del historial? Se descontará del total invertido de este activo." textoBoton="Eliminar" variante="danger" />
 
