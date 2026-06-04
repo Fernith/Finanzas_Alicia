@@ -7,7 +7,7 @@ import { ConfigProvider } from './context/ConfigContext';
 import Suscripciones from './pages/Suscripciones';
 
 // Importa aquí tus páginas
-import Balance from './pages/Balance';
+import Balance from './pages/Finanzas';
 import Gastos from './pages/Gastos';
 import Ingresos from './pages/Ingresos';
 import Inversiones from './pages/Inversiones';

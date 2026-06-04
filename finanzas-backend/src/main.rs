@@ -75,7 +75,6 @@ async fn main() {
         .route("/api/ahorros/resumen", axum::routing::get(handlers::ahorros::obtener_resumen))
         .route("/api/ahorros/metas/:id/movimientos", axum::routing::post(handlers::ahorros::agregar_movimiento_meta))
 
-        // --- RUTAS DE INVERSIONES ---
         // --- RUTAS DE INVERSIONES (NUEVO MODELO) ---
         .route("/api/inversiones/activos", axum::routing::get(handlers::inversiones::listar_activos).post(handlers::inversiones::crear_activo))
         .route("/api/inversiones/activos/:ticker", axum::routing::put(handlers::inversiones::modificar_activo).delete(handlers::inversiones::eliminar_activo))

@@ -18,7 +18,7 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { path: '/', label: 'Balance', icon: Wallet, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30' },
+    { path: '/', label: 'Finanzas', icon: Wallet, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30' },
     { path: '/gastos', label: 'Gastos', icon: TrendingDown, color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/30' },
     { path: '/ingresos', label: 'Ingresos', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
     { path: '/inversiones', label: 'Inversiones', icon: LineChart, color: 'text-amber-500 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30' },

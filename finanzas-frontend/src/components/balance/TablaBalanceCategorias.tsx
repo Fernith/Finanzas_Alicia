@@ -1,17 +1,30 @@
 import { formatearMoneda } from '../../utils/formatters';
 
-type Props = { tablaCategorias: any[]; mesesNombres: string[]; resumenMensual: any[]; totalMediaMensual: number; totalGastos: number; };
+type Props = { 
+  tablaCategorias: any[]; 
+  mesesNombres: string[]; 
+  resumenMensual: any[]; 
+  totalGlobal: number; 
+  tipo: 'GASTO' | 'INGRESO';
+};
 
-export default function TablaBalanceCategorias({ tablaCategorias, mesesNombres, resumenMensual, totalMediaMensual, totalGastos }: Props) {
+export default function TablaBalanceCategorias({ tablaCategorias, mesesNombres, resumenMensual, totalGlobal, tipo }: Props) {
+  const isIngreso = tipo === 'INGRESO';
+  const nombreOperacion = isIngreso ? 'Ingresos' : 'Gastos';
+  const colorBordeGeneral = isIngreso ? 'dark:border-emerald-500/30 border-emerald-200' : 'dark:border-red-500/30 border-red-200';
+  const colorTextTotal = isIngreso ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-red-500';
+  
+  const totalMediaMensual = tablaCategorias.reduce((acc, cat) => acc + cat.media, 0);
+
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-blue-500/30 rounded-2xl shadow-sm overflow-hidden w-full">
-      <div className="p-5 border-b border-slate-200 dark:border-blue-500/30 bg-slate-50/50 dark:bg-neutral-900/50">
-        <h2 className="text-lg font-bold text-slate-800 dark:text-white">Desglose de Gastos por Categoría</h2>
+    <div className={`bg-white dark:bg-neutral-900 border ${colorBordeGeneral} rounded-2xl shadow-sm overflow-hidden w-full`}>
+      <div className={`p-5 border-b ${colorBordeGeneral} bg-slate-50/50 dark:bg-neutral-900/50`}>
+        <h2 className="text-lg font-bold text-slate-800 dark:text-white">Desglose de {nombreOperacion} por Categoría</h2>
       </div>
       <div className="overflow-x-auto w-full">
         <table className="w-full text-left border-collapse min-w-max">
           <thead>
-            <tr className="bg-slate-50/80 dark:bg-neutral-900/20 border-b border-slate-200 dark:border-blue-500/30">
+            <tr className={`bg-slate-50/80 dark:bg-neutral-900/20 border-b ${colorBordeGeneral}`}>
               <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider sticky left-0 bg-slate-50/90 dark:bg-neutral-900/90 backdrop-blur z-10 whitespace-nowrap">Categoría</th>
               {mesesNombres.map(mes => <th key={mes} className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right whitespace-nowrap">{mes}</th>)}
               <th className="p-4 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider text-right bg-blue-50/30 dark:bg-blue-900/10 whitespace-nowrap">Media Mensual</th>
@@ -19,7 +32,7 @@ export default function TablaBalanceCategorias({ tablaCategorias, mesesNombres, 
               <th className="p-4 text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider text-right bg-slate-100 dark:bg-neutral-800/50 whitespace-nowrap">Total Anual</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-blue-500/20">
+          <tbody className="divide-y divide-slate-100 dark:divide-neutral-800/60">
             {tablaCategorias.length > 0 ? (
               tablaCategorias.map(fila => (
                 <tr key={fila.categoria} className="hover:bg-slate-50 dark:hover:bg-neutral-800/20 transition-colors">
@@ -33,22 +46,33 @@ export default function TablaBalanceCategorias({ tablaCategorias, mesesNombres, 
                     </td>
                   ))}
                   <td className="p-4 text-sm text-right font-semibold text-blue-600 dark:text-blue-400 bg-blue-50/30 dark:bg-blue-900/10 whitespace-nowrap">{formatearMoneda(fila.media)} €</td>
-                  <td className="p-4 text-sm text-right font-semibold text-purple-600 dark:text-purple-400 bg-purple-50/30 dark:bg-purple-900/10 whitespace-nowrap">{fila.porcentaje.toFixed(1)} %</td>
+                  
+                  {/* CAMBIO A 2 DECIMALES SIN REDONDEO */}
+                  <td className="p-4 text-sm text-right font-semibold text-purple-600 dark:text-purple-400 bg-purple-50/30 dark:bg-purple-900/10 whitespace-nowrap">
+                    {(Math.trunc(fila.porcentaje * 100) / 100).toFixed(2)} %
+                  </td>
+
                   <td className="p-4 text-sm text-right font-bold text-slate-900 dark:text-white bg-slate-50 dark:bg-neutral-800/30 whitespace-nowrap">{formatearMoneda(fila.total)} €</td>
                 </tr>
               ))
             ) : (
-              <tr><td colSpan={16} className="p-8 text-center text-slate-400">No hay gastos registrados en este año.</td></tr>
+              <tr><td colSpan={16} className="p-8 text-center text-slate-400">No hay {nombreOperacion.toLowerCase()} registrados en este año.</td></tr>
             )}
           </tbody>
           {tablaCategorias.length > 0 && (
             <tfoot>
-              <tr className="border-t-2 border-slate-200 dark:border-blue-500/30 bg-slate-50 dark:bg-neutral-900/40">
-                <td className="p-4 text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider sticky left-0 bg-slate-50/90 dark:bg-neutral-900/90 backdrop-blur z-10 whitespace-nowrap">Total Gastos</td>
-                {resumenMensual.map(m => <td key={m.mes} className="p-4 text-sm text-right font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatearMoneda(m.gastos)} €</td>)}
+              <tr className={`border-t-2 ${colorBordeGeneral} bg-slate-50 dark:bg-neutral-900/40`}>
+                <td className="p-4 text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider sticky left-0 bg-slate-50/90 dark:bg-neutral-900/90 backdrop-blur z-10 whitespace-nowrap">Total {nombreOperacion}</td>
+                
+                {resumenMensual.map(m => (
+                  <td key={m.mes} className="p-4 text-sm text-right font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                    {formatearMoneda(isIngreso ? m.ingresos : m.gastos)} €
+                  </td>
+                ))}
+                
                 <td className="p-4 text-sm text-right font-bold text-blue-600 dark:text-blue-400 bg-blue-50/30 dark:bg-blue-900/10 whitespace-nowrap">{formatearMoneda(totalMediaMensual)} €</td>
                 <td className="p-4 bg-purple-50/30 dark:bg-purple-900/10 whitespace-nowrap"></td>
-                <td className="p-4 text-base text-right font-black text-red-600 dark:text-red-500 whitespace-nowrap">{formatearMoneda(totalGastos)} €</td>
+                <td className={`p-4 text-base text-right font-black ${colorTextTotal} whitespace-nowrap`}>{formatearMoneda(totalGlobal)} €</td>
               </tr>
             </tfoot>
           )}

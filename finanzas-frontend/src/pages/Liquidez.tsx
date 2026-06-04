@@ -16,7 +16,7 @@ export default function Liquidez() {
     <div className="space-y-8 animate-in fade-in duration-500 pb-12 w-full max-w-[1400px] mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-slate-200 dark:border-blue-500/30 pb-6">
         <div className="flex items-center gap-4">
-          <Link to="/ahorros" className="p-2 bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-700 text-slate-500 dark:text-slate-400 rounded-xl transition-colors">
+          <Link to="/" className="p-2 bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-700 text-slate-500 dark:text-slate-400 rounded-xl transition-colors">
             <ChevronLeft size={24} />
           </Link>
           <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-blue-900/40 dark:to-indigo-900/20 rounded-2xl shadow-sm border border-blue-200/50 dark:border-blue-800/50">
