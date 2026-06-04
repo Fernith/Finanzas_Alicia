@@ -1,238 +1,142 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, X, Pencil, Trash2, Clock, CheckCircle2, Check } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Pencil, Trash2, CheckCircle2, Clock, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { Transaction } from '../../types';
 import { formatearMoneda } from '../../utils/formatters';
-import { useConfig } from '../../context/ConfigContext';
+import ModalConfirmacion from '../general/ModalConfirmacion'; // <-- Importamos el modal
 
-export type Column = { 
-  key: string; 
-  label: string; 
-  sortable?: boolean; 
-  filterable?: boolean; 
+type Props = {
+  transacciones: Transaction[];
+  onEdit: (t: Transaction) => void;
+  onDelete: (id: string) => void;
+  onTogglePendiente: (id: string) => void;
+  tipo: 'GASTO' | 'INGRESO';
+  colorBorderTheme: string;
 };
 
-type TableProps = { 
-  columns: Column[]; 
-  data: any[];
-  colorTheme?: 'red' | 'emerald' | 'blue' | 'amber' | 'purple';
-  categoriasDisponibles?: string[]; 
-  cuentasDisponibles?: string[];
-  onGlobalSearch?: (term: string) => void;
-  onEdit?: (row: any) => void;   
-  onDelete?: (id: string) => void; 
-  onMarcarCompletado?: (id: string) => void;
-};
-
-const formatearFechaLarga = (fechaStr: string) => {
-  if (!fechaStr) return '';
-  const [anio, mes, dia] = fechaStr.split('-');
-  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  return `${parseInt(dia)} ${meses[parseInt(mes) - 1]} ${anio}`;
-};
-
-export default function TransactionTable({ columns, data, colorTheme, categoriasDisponibles, cuentasDisponibles, onGlobalSearch, onEdit, onDelete, onMarcarCompletado }: TableProps) {
-  const { usarPendientes } = useConfig();
-  
+export default function TransactionTable({ transacciones, onEdit, onDelete, onTogglePendiente, tipo, colorBorderTheme }: Props) {
+  const [sortDesc, setSortDesc] = useState(true);
+  const [perPage, setPerPage] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(15);
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filtros, setFiltros] = useState<Record<string, string>>({});
-  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'fecha', direction: 'desc' });
+  // Estado para el modal de confirmación de activación
+  const [idConfirmarActivacion, setIdConfirmarActivacion] = useState<string | null>(null);
 
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, filtros, sortConfig]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => { if (onGlobalSearch) onGlobalSearch(searchTerm); }, 300);
-    return () => clearTimeout(timer);
-  }, [searchTerm, onGlobalSearch]);
-
-  // TEMAS DINÁMICOS CON BORDES PERSONALIZADOS
-  const headerThemes = {
-    red: 'bg-red-50/80 dark:bg-red-900/20 border-b border-red-100 dark:border-red-500/30',
-    emerald: 'bg-emerald-50/80 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-500/30',
-    blue: 'bg-blue-50/80 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-500/30',
-    amber: 'bg-amber-50/80 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-500/30',
-    purple: 'bg-purple-50/80 dark:bg-purple-900/20 border-b border-purple-100 dark:border-purple-500/30',
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return `${d.getDate()} ${d.toLocaleString('es-ES', { month: 'long' })} ${d.getFullYear()}`;
   };
 
-  const rowThemes = {
-    red: 'even:bg-red-50/40 dark:even:bg-neutral-900/50 hover:bg-red-100/60 dark:hover:bg-neutral-800/80',
-    emerald: 'even:bg-emerald-50/40 dark:even:bg-neutral-900/50 hover:bg-emerald-100/60 dark:hover:bg-neutral-800/80',
-    blue: 'even:bg-blue-50/40 dark:even:bg-neutral-900/50 hover:bg-blue-100/60 dark:hover:bg-neutral-800/80',
-    amber: 'even:bg-amber-50/40 dark:even:bg-neutral-900/50 hover:bg-amber-100/60 dark:hover:bg-neutral-800/80',
-    purple: 'even:bg-purple-50/40 dark:even:bg-neutral-900/50 hover:bg-purple-100/60 dark:hover:bg-neutral-800/80',
-  };
-
-  const footerThemes = {
-    red: 'bg-red-50/60 dark:bg-neutral-900/80 border-t-2 border-red-100 dark:border-red-500/30 text-red-700 dark:text-red-400',
-    emerald: 'bg-emerald-50/60 dark:bg-neutral-900/80 border-t-2 border-emerald-100 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400',
-    blue: 'bg-blue-50/60 dark:bg-neutral-900/80 border-t-2 border-blue-100 dark:border-blue-500/30 text-blue-700 dark:text-blue-400',
-    amber: 'bg-amber-50/60 dark:bg-neutral-900/80 border-t-2 border-amber-100 dark:border-amber-500/30 text-amber-700 dark:text-amber-400',
-    purple: 'bg-purple-50/60 dark:bg-neutral-900/80 border-t-2 border-purple-100 dark:border-purple-500/30 text-purple-700 dark:text-purple-400',
-  };
-
-  const divideThemes = {
-    red: 'divide-slate-100 dark:divide-red-500/20',
-    emerald: 'divide-slate-100 dark:divide-emerald-500/20',
-    blue: 'divide-slate-100 dark:divide-blue-500/20',
-    amber: 'divide-slate-100 dark:divide-amber-500/20',
-    purple: 'divide-slate-100 dark:divide-purple-500/20',
-  };
-
-  const headerBg = colorTheme ? headerThemes[colorTheme] : 'bg-slate-50/50 dark:bg-neutral-900/50 border-b border-slate-200 dark:border-neutral-700';
-  const rowBg = colorTheme ? rowThemes[colorTheme] : 'even:bg-slate-50/50 dark:even:bg-neutral-900/50 hover:bg-slate-100 dark:hover:bg-neutral-800/80';
-  const footerBg = colorTheme ? footerThemes[colorTheme] : 'bg-slate-100/80 dark:bg-neutral-900/80 border-t-2 border-slate-200 dark:border-neutral-700 text-slate-900 dark:text-white';
-  const tbodyDivide = colorTheme ? divideThemes[colorTheme] : 'divide-slate-100 dark:divide-neutral-800';
-
-  const opcionesFiltro = useMemo(() => {
-    const opciones: Record<string, string[]> = {};
-    columns.filter(c => c.filterable).forEach(col => {
-      if (col.key === 'categoria' && categoriasDisponibles) opciones[col.key] = categoriasDisponibles;
-      else if (col.key === 'cuenta' && cuentasDisponibles) opciones[col.key] = cuentasDisponibles;
-      else opciones[col.key] = Array.from(new Set(data.map(item => String(item[col.key])))).sort();
+  const transaccionesOrdenadas = useMemo(() => {
+    return [...transacciones].sort((a, b) => {
+      return sortDesc ? new Date(b.fecha).getTime() - new Date(a.fecha).getTime() : new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
     });
-    return opciones;
-  }, [data, columns, categoriasDisponibles, cuentasDisponibles]);
+  }, [transacciones, sortDesc]);
 
-  const processedData = useMemo(() => {
-    let result = [...data];
-    Object.entries(filtros).forEach(([key, value]) => {
-      if (value !== '') result = result.filter(row => row[key] === value);
-    });
-    result.sort((a, b) => {
-      let valA = a[sortConfig.key];
-      let valB = b[sortConfig.key];
-      if (sortConfig.key === 'fecha') { valA = new Date(valA).getTime(); valB = new Date(valB).getTime(); }
-      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-    return result;
-  }, [data, filtros, sortConfig]);
+  const totalPages = Math.ceil(transaccionesOrdenadas.length / perPage) || 1;
+  const currentItems = transaccionesOrdenadas.slice((currentPage - 1) * perPage, currentPage * perPage);
+  
+  const totalFiltrado = transacciones.reduce((acc, t) => acc + t.cantidad, 0);
 
-  const sumaCantidadFiltrada = useMemo(() => processedData.reduce((acc, curr) => acc + Number(curr.cantidad), 0), [processedData]);
-
-  const totalItems = processedData.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = processedData.slice(startIndex, startIndex + itemsPerPage);
-
-  const handleSort = (key: string) => {
-    setSortConfig(current => ({ key, direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc' }));
-  };
+  const isIngreso = tipo === 'INGRESO';
+  const headerBg = isIngreso ? 'dark:bg-[#07130f] bg-emerald-50' : 'dark:bg-[#1a0f0f] bg-red-50';
+  const colorTextHighlight = isIngreso ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-red-500';
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
-        <div className="relative w-full lg:w-72">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={16} className="text-slate-400" />
-          </div>
-          <input type="text" placeholder="Buscar en cualquier campo..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pl-10 pr-10 py-2 bg-slate-100 dark:bg-neutral-800 border-transparent rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-neutral-700 focus:bg-white dark:focus:bg-black focus:ring-2 transition-all dark:text-white outline-none ${colorTheme ? `focus:border-${colorTheme}-500 dark:focus:border-${colorTheme}-500 focus:ring-${colorTheme}-100 dark:focus:ring-${colorTheme}-900/30` : 'focus:ring-slate-200 dark:focus:ring-slate-800'}`} />
-          {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><X size={16} /></button>
-          )}
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-          {columns.filter(c => c.filterable).map(col => (
-            <div key={col.key} className="relative flex items-center w-full sm:w-auto">
-              <Filter size={14} className="absolute left-3 text-slate-400" />
-              <select value={filtros[col.key] || ''} onChange={(e) => setFiltros({ ...filtros, [col.key]: e.target.value })}
-                className={`w-full sm:w-auto pl-8 pr-8 py-2 bg-slate-100 dark:bg-neutral-800 border-transparent rounded-lg text-sm appearance-none cursor-pointer hover:bg-slate-200 dark:hover:bg-neutral-700 focus:bg-white dark:focus:bg-black focus:ring-2 transition-all dark:text-white outline-none ${colorTheme ? `focus:ring-${colorTheme}-100 dark:focus:ring-${colorTheme}-900/30` : 'focus:ring-slate-200 dark:focus:ring-slate-800'}`}
-              >
-                <option value="">Todas las {col.label.toLowerCase()}</option>
-                {opcionesFiltro[col.key]?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
-              <ChevronDown size={14} className="absolute right-3 text-slate-400 pointer-events-none" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="overflow-x-auto w-full">
-        <table className="w-full text-left border-collapse min-w-[700px]">
-          <thead>
-            <tr className={headerBg}>
-              {usarPendientes && <th className="p-4 w-12 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">Est.</th>}
-              {columns.map((col) => (
-                <th key={col.key} className={`p-4 text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider ${col.sortable ? 'cursor-pointer hover:text-slate-900 dark:hover:text-white' : ''}`} onClick={() => col.sortable && handleSort(col.key)}>
-                  <div className="flex items-center gap-1">
-                    {col.label}
-                    {col.sortable && sortConfig.key === col.key && (sortConfig.direction === 'desc' ? <ChevronDown size={14}/> : <ChevronUp size={14}/>)}
-                  </div>
+    <>
+      <div className={`bg-white dark:bg-[#121212] border rounded-2xl shadow-sm overflow-hidden flex flex-col h-full transition-colors ${colorBorderTheme}`}>
+        
+        <div className="overflow-x-auto w-full flex-1">
+          <table className="w-full text-left border-collapse min-w-[700px]">
+            
+            <thead>
+              <tr className={`${headerBg} border-b border-neutral-200 dark:border-neutral-800/80`}>
+                <th className="p-4 w-10 text-center"></th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 cursor-pointer select-none" onClick={() => setSortDesc(!sortDesc)}>
+                  <div className="flex items-center gap-1">FECHA <ChevronDown size={14} className={`transition-transform ${!sortDesc && 'rotate-180'}`}/></div>
                 </th>
-              ))}
-              {(onEdit || onDelete || onMarcarCompletado) && <th className="p-4 text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider text-right">Acciones</th>}
-            </tr>
-          </thead>
-          
-          <tbody className={`divide-y ${tbodyDivide}`}>
-            {paginatedData.length > 0 ? (
-              paginatedData.map((row, index) => (
-                <tr key={row.id || index} className={`transition-colors ${rowBg} ${usarPendientes && row.pendiente ? 'opacity-85' : ''}`}>
-                  {usarPendientes && (
-                    <td className="p-4 w-12 text-center">
-                      {row.pendiente ? <Clock size={18} className="text-amber-500 mx-auto drop-shadow-sm" /> : <CheckCircle2 size={18} className="text-emerald-500 mx-auto drop-shadow-sm" />}
-                    </td>
-                  )}
-                  {columns.map((col) => (
-                    <td key={col.key} className="p-4 text-sm text-slate-700 dark:text-slate-300">
-                      {col.key === 'fecha' ? <span>{formatearFechaLarga(row[col.key])}</span> : col.key === 'cantidad' ? <span className="font-semibold text-slate-900 dark:text-white">{formatearMoneda(Number(row[col.key]))} €</span> : row[col.key]}
-                    </td>
-                  ))}
-                  {(onEdit || onDelete || onMarcarCompletado) && (
-                    <td className="p-4 text-right space-x-2 whitespace-nowrap">
-                      {usarPendientes && row.pendiente && onMarcarCompletado && (
-                        <button onClick={() => onMarcarCompletado(row.id)} className="p-1.5 inline-flex text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition-colors" title="Marcar como completado"><Check size={16} strokeWidth={3} /></button>
-                      )}
-                      {onEdit && (
-                        <button onClick={() => onEdit(row)} className="p-1.5 inline-flex text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors" title="Editar"><Pencil size={16} /></button>
-                      )}
-                      {onDelete && (
-                        <button onClick={() => onDelete(row.id)} className="p-1.5 inline-flex text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors" title="Eliminar"><Trash2 size={16} /></button>
-                      )}
-                    </td>
-                  )}
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">CANTIDAD</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">CATEGORÍA</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">CUENTA</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">DESCRIPCIÓN</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 text-center">ACCIONES</th>
+              </tr>
+            </thead>
+            
+            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/60">
+              {currentItems.map((t) => (
+                <tr key={t.id} className="odd:bg-transparent even:bg-neutral-50 dark:even:bg-[#161616] hover:bg-neutral-100 dark:hover:bg-[#1a1a1a] transition-colors">
+                  
+                  <td className="p-4 text-center">
+                    {t.pendiente 
+                      ? <button onClick={() => setIdConfirmarActivacion(t.id)} title="Marcar completado" className="text-amber-500 hover:scale-110 transition-transform"><Clock size={16} strokeWidth={3} /></button>
+                      : <span title="Completado"><CheckCircle2 size={16} strokeWidth={3} className="text-emerald-500 mx-auto" /></span>
+                    }
+                  </td>
+                  
+                  <td className="p-4 text-sm font-medium text-neutral-700 dark:text-neutral-300">{formatDate(t.fecha)}</td>
+                  <td className="p-4 text-base font-bold text-neutral-900 dark:text-white">{formatearMoneda(t.cantidad)} €</td>
+                  <td className="p-4 text-sm text-neutral-700 dark:text-neutral-300">{t.categoria}</td>
+                  <td className="p-4 text-sm text-neutral-700 dark:text-neutral-300 truncate max-w-[150px]">{t.cuenta}</td>
+                  
+                  {/* Cambio: Eliminado el truncate y añadido whitespace-pre-wrap y break-words */}
+                  <td className="p-4 text-sm text-neutral-500 dark:text-neutral-400 min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words">{t.descripcion || ''}</td>
+                  
+                  <td className="p-4 text-center">
+                    <div className="flex items-center justify-center gap-3">
+                      <button onClick={() => onEdit(t)} className="text-neutral-400 hover:text-indigo-500 transition-colors" title="Editar"><Pencil size={16} /></button>
+                      <button onClick={() => onDelete(t.id)} className="text-neutral-400 hover:text-red-500 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
+                    </div>
+                  </td>
                 </tr>
-              ))
-            ) : (
-              <tr><td colSpan={columns.length + (usarPendientes ? 2 : 1)} className="p-8 text-center text-slate-500 dark:text-slate-400">No se encontraron resultados</td></tr>
-            )}
-          </tbody>
-          <tfoot>
-            <tr className={`font-bold ${footerBg}`}>
-              {usarPendientes && <td></td>}
-              {columns.map((col, index) => (
-                <td key={`total-${col.key}`} className="p-4 text-sm whitespace-nowrap">
-                  {col.key === 'cantidad' ? <span className="text-base font-black tracking-tight">{formatearMoneda(sumaCantidadFiltrada)} €</span> : index === 0 ? <span className="uppercase text-xs font-bold tracking-wider opacity-70">Total Filtrado:</span> : ''}
-                </td>
               ))}
-              {(onEdit || onDelete || onMarcarCompletado) && <td></td>}
-            </tr>
-          </tfoot>
-        </table>
+              {currentItems.length === 0 && (
+                <tr><td colSpan={7} className="p-8 text-center text-neutral-500 text-sm">No hay resultados.</td></tr>
+              )}
+            </tbody>
+
+            <tfoot className={`${headerBg} border-t border-neutral-200 dark:border-neutral-800/80`}>
+              <tr>
+                <td colSpan={2} className={`p-4 text-xs font-bold uppercase tracking-wider ${colorTextHighlight}`}>
+                  TOTAL FILTRADO:
+                </td>
+                <td colSpan={5} className={`p-4 text-base font-black ${colorTextHighlight}`}>
+                  {formatearMoneda(totalFiltrado)} €
+                </td>
+              </tr>
+            </tfoot>
+
+          </table>
+        </div>
+
+        <div className={`${headerBg} p-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-neutral-200 dark:border-neutral-800/80`}>
+          <div className="flex items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400">
+            <div className="flex items-center gap-2">
+              <span>Filas:</span>
+              <select value={perPage} onChange={(e) => { setPerPage(Number(e.target.value)); setCurrentPage(1); }} className="bg-white dark:bg-[#202020] border border-neutral-300 dark:border-neutral-700 rounded-md px-2 py-1 outline-none text-neutral-800 dark:text-white">
+                {[10, 15, 25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+            <span>Mostrando {transaccionesOrdenadas.length > 0 ? (currentPage - 1) * perPage + 1 : 0} a {Math.min(currentPage * perPage, transaccionesOrdenadas.length)} de {transaccionesOrdenadas.length} resultados</span>
+          </div>
+
+          <div className="flex items-center gap-3 bg-white dark:bg-[#202020] rounded-lg px-2 py-1 border border-neutral-300 dark:border-neutral-700">
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1 disabled:opacity-30 hover:text-neutral-800 dark:hover:text-white text-neutral-400 transition-colors"><ChevronLeft size={16} /></button>
+            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{currentPage} / {totalPages}</span>
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1 disabled:opacity-30 hover:text-neutral-800 dark:hover:text-white text-neutral-400 transition-colors"><ChevronRight size={16} /></button>
+          </div>
+        </div>
       </div>
 
-      <div className={`p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-600 dark:text-slate-400 ${colorTheme ? `border-slate-200 dark:border-${colorTheme}-500/30` : 'border-slate-200 dark:border-neutral-700'}`}>
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-          <div className="flex items-center gap-2">
-            <span>Filas:</span>
-            <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className={`bg-slate-100 dark:bg-neutral-800 border-transparent rounded px-2 py-1 outline-none cursor-pointer focus:ring-2 ${colorTheme ? `focus:ring-${colorTheme}-100 dark:focus:ring-${colorTheme}-900/30` : 'focus:ring-slate-200 dark:focus:ring-slate-800'}`}>
-              {[10, 15, 25, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
-            </select>
-          </div>
-          <div className="text-center sm:text-left hidden sm:block">
-            Mostrando {totalItems === 0 ? 0 : startIndex + 1} a {Math.min(startIndex + itemsPerPage, totalItems)} de {totalItems} resultados
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronLeft size={20} /></button>
-          <span className="px-3 py-1 bg-slate-100 dark:bg-neutral-800 rounded-md font-medium">{currentPage} / {totalPages || 1}</span>
-          <button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || totalPages === 0} className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronRight size={20} /></button>
-        </div>
-      </div>
-    </div>
+      {/* Modal de confirmación para activar operación pendiente */}
+      <ModalConfirmacion 
+        isOpen={!!idConfirmarActivacion} 
+        onClose={() => setIdConfirmarActivacion(null)} 
+        onConfirm={() => { 
+          if(idConfirmarActivacion) onTogglePendiente(idConfirmarActivacion); 
+          setIdConfirmarActivacion(null); 
+        }} 
+        mensaje="¿Estás seguro de que deseas marcar esta operación como completada?" 
+      />
+    </>
   );
 }

@@ -13,8 +13,19 @@ export interface TransaccionBase {
   pendiente: boolean;
 }
 
-export interface Gasto extends TransaccionBase {}
-export interface Ingreso extends TransaccionBase {}
+export interface Transaction {
+  id: string;
+  fecha: string;
+  cantidad: number;
+  categoria: string;
+  color_grupo?: string; // NUEVO
+  cuenta: string;
+  descripcion?: string;
+  pendiente: boolean;
+}
+
+export interface Gasto extends Transaction {}
+export interface Ingreso extends Transaction {}
 
 // ----------------------------------------------------
 // NUEVO MODELO DE INVERSIONES
