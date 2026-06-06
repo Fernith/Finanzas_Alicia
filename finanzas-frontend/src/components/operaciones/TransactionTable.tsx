@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Pencil, Trash2, CheckCircle2, Clock, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Transaction } from '../../types';
-import { formatearMoneda } from '../../utils/formatters';
-import ModalConfirmacion from '../general/ModalConfirmacion'; // <-- Importamos el modal
+import { formatearMoneda, obtenerColorTextoParaFondo } from '../../utils/formatters';
+import ModalConfirmacion from '../general/ModalConfirmacion';
 
 type Props = {
   transacciones: Transaction[];
@@ -15,10 +15,9 @@ type Props = {
 
 export default function TransactionTable({ transacciones, onEdit, onDelete, onTogglePendiente, tipo, colorBorderTheme }: Props) {
   const [sortDesc, setSortDesc] = useState(true);
-  const [perPage, setPerPage] = useState(15);
+  const [perPage, setPerPage] = useState(100);
   const [currentPage, setCurrentPage] = useState(1);
   
-  // Estado para el modal de confirmación de activación
   const [idConfirmarActivacion, setIdConfirmarActivacion] = useState<string | null>(null);
 
   const formatDate = (dateStr: string) => {
@@ -63,32 +62,41 @@ export default function TransactionTable({ transacciones, onEdit, onDelete, onTo
             </thead>
             
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/60">
-              {currentItems.map((t) => (
-                <tr key={t.id} className="odd:bg-transparent even:bg-neutral-50 dark:even:bg-[#161616] hover:bg-neutral-100 dark:hover:bg-[#1a1a1a] transition-colors">
-                  
-                  <td className="p-4 text-center">
-                    {t.pendiente 
-                      ? <button onClick={() => setIdConfirmarActivacion(t.id)} title="Marcar completado" className="text-amber-500 hover:scale-110 transition-transform"><Clock size={16} strokeWidth={3} /></button>
-                      : <span title="Completado"><CheckCircle2 size={16} strokeWidth={3} className="text-emerald-500 mx-auto" /></span>
-                    }
-                  </td>
-                  
-                  <td className="p-4 text-sm font-medium text-neutral-700 dark:text-neutral-300">{formatDate(t.fecha)}</td>
-                  <td className="p-4 text-base font-bold text-neutral-900 dark:text-white">{formatearMoneda(t.cantidad)} €</td>
-                  <td className="p-4 text-sm text-neutral-700 dark:text-neutral-300">{t.categoria}</td>
-                  <td className="p-4 text-sm text-neutral-700 dark:text-neutral-300 truncate max-w-[150px]">{t.cuenta}</td>
-                  
-                  {/* Cambio: Eliminado el truncate y añadido whitespace-pre-wrap y break-words */}
-                  <td className="p-4 text-sm text-neutral-500 dark:text-neutral-400 min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words">{t.descripcion || ''}</td>
-                  
-                  <td className="p-4 text-center">
-                    <div className="flex items-center justify-center gap-3">
-                      <button onClick={() => onEdit(t)} className="text-neutral-400 hover:text-indigo-500 transition-colors" title="Editar"><Pencil size={16} /></button>
-                      <button onClick={() => onDelete(t.id)} className="text-neutral-400 hover:text-red-500 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {currentItems.map((t) => {
+                const bgCat = t.color_grupo || '#94a3b8';
+                return (
+                  <tr key={t.id} className="odd:bg-transparent even:bg-neutral-50 dark:even:bg-[#161616] hover:bg-neutral-100 dark:hover:bg-[#1a1a1a] transition-colors">
+                    <td className="p-4 text-center">
+                      {t.pendiente 
+                        ? <button onClick={() => setIdConfirmarActivacion(t.id)} title="Marcar completado" className="text-amber-500 hover:scale-110 transition-transform"><Clock size={16} strokeWidth={3} /></button>
+                        : <span title="Completado"><CheckCircle2 size={16} strokeWidth={3} className="text-emerald-500 mx-auto" /></span>
+                      }
+                    </td>
+                    <td className="p-4 text-sm font-medium text-neutral-700 dark:text-neutral-300">{formatDate(t.fecha)}</td>
+                    <td className="p-4 text-base font-bold text-neutral-900 dark:text-white">{formatearMoneda(t.cantidad)} €</td>
+                    
+                    {/* APLICADO CONTRASTE AUTOMÁTICO AL RECUADRO DE CATEGORÍA */}
+                    <td className="p-4">
+                      <span 
+                        className="px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm border border-black/10 inline-block truncate max-w-[150px]"
+                        style={{ backgroundColor: bgCat, color: obtenerColorTextoParaFondo(bgCat) }}
+                        title={t.categoria}
+                      >
+                        {t.categoria}
+                      </span>
+                    </td>
+                    
+                    <td className="p-4 text-sm text-neutral-700 dark:text-neutral-300 truncate max-w-[150px]">{t.cuenta}</td>
+                    <td className="p-4 text-sm text-neutral-500 dark:text-neutral-400 min-w-[200px] max-w-[300px] whitespace-pre-wrap break-words">{t.descripcion || ''}</td>
+                    <td className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-3">
+                        <button onClick={() => onEdit(t)} className="text-neutral-400 hover:text-indigo-500 transition-colors" title="Editar"><Pencil size={16} /></button>
+                        <button onClick={() => onDelete(t.id)} className="text-neutral-400 hover:text-red-500 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {currentItems.length === 0 && (
                 <tr><td colSpan={7} className="p-8 text-center text-neutral-500 text-sm">No hay resultados.</td></tr>
               )}
@@ -104,7 +112,6 @@ export default function TransactionTable({ transacciones, onEdit, onDelete, onTo
                 </td>
               </tr>
             </tfoot>
-
           </table>
         </div>
 
@@ -127,7 +134,6 @@ export default function TransactionTable({ transacciones, onEdit, onDelete, onTo
         </div>
       </div>
 
-      {/* Modal de confirmación para activar operación pendiente */}
       <ModalConfirmacion 
         isOpen={!!idConfirmarActivacion} 
         onClose={() => setIdConfirmarActivacion(null)} 

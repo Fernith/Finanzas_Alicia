@@ -41,6 +41,8 @@ export default function Finanzas() {
   const pctIngresos = totalMesEnCurso > 0 ? (mesActualStats.ingresos / totalMesEnCurso) * 100 : 50;
   const pctGastos = totalMesEnCurso > 0 ? (mesActualStats.gastos / totalMesEnCurso) * 100 : 50;
 
+  const totalReal = resumen.dinero_liquido + dineroInvertidoReal;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12 w-[95vw] max-w-[1600px] 2xl:max-w-[1800px] relative left-1/2 -translate-x-1/2">
       
@@ -67,7 +69,7 @@ export default function Finanzas() {
         titulo="Patrimonio Neto" 
         defaultOpen={true}
         colorBorde="border-indigo-200 dark:border-indigo-500/30"
-        extraHeader={<span className="text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400">{formatearMoneda(resumen.dinero_liquido)} €</span>}
+        extraHeader={<span className="text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400">{formatearMoneda(totalReal)} €</span>}
       >
         <div className="flex flex-col gap-6 mb-2">
           
@@ -129,7 +131,14 @@ export default function Finanzas() {
       <Acordeon titulo="Balance General" colorBorde="border-blue-200 dark:border-blue-500/30">
         <div className="space-y-8">
           <BalanceMetricas totalIngresos={totalIngresosAnual} totalGastos={totalGastosAnual} totalBalance={flujoNetoActual} />
-          <TablaBalanceMensual mesesNombres={mesesNombres} resumenMensual={resumenMensual} totalIngresos={totalIngresosAnual} totalGastos={totalGastosAnual} totalBalance={flujoNetoActual} />
+          <TablaBalanceMensual 
+            mesesNombres={mesesNombres} 
+            resumenMensual={resumenMensual} 
+            totalIngresos={totalIngresosAnual} 
+            totalGastos={totalGastosAnual} 
+            totalBalance={flujoNetoActual} 
+            anioSeleccionado={anioSeleccionado} 
+          />
           <GraficoBalanceEvolutivo resumenMensual={resumenMensual} />
         </div>
       </Acordeon>

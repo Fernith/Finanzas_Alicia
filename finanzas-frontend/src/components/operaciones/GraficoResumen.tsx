@@ -1,4 +1,25 @@
 import { PieChart, Pie, Tooltip, ResponsiveContainer } from 'recharts';
+import { formatearMoneda, obtenerColorTextoParaFondo } from '../../utils/formatters';
+
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const bgColor = data.payload.fill || '#94a3b8';
+    const textColor = obtenerColorTextoParaFondo(bgColor);
+    return (
+      <div className="bg-white dark:bg-[#1a1a1a] p-3 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-800/80 z-50 flex items-center gap-4">
+        <span 
+           className="px-2 py-0.5 rounded text-xs font-bold shadow-sm border border-black/10"
+           style={{ backgroundColor: bgColor, color: textColor }}
+        >
+           {data.name}
+        </span>
+        <span className="font-bold text-neutral-900 dark:text-white">{formatearMoneda(data.value)} €</span>
+      </div>
+    );
+  }
+  return null;
+};
 
 type GraficoProps = {
   titulo: string;
@@ -17,7 +38,6 @@ export default function GraficoResumen({ titulo, datosGrafico, colorBorderTheme 
           <div className="h-64 w-full mb-4">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                {/* Eliminamos el map interno de <Cell>. Recharts leerá "fill" de datosGrafico directamente */}
                 <Pie 
                   data={datosGrafico} 
                   innerRadius={60} 
@@ -28,23 +48,27 @@ export default function GraficoResumen({ titulo, datosGrafico, colorBorderTheme 
                   label={({ percent }) => percent !== undefined ? `${(percent * 100).toFixed(0)}%` : ''}
                   labelLine={false} 
                 />
-                <Tooltip 
-                  formatter={(((value: number, name: string) => [`${value.toFixed(2)} €`, name]) as any)} 
-                  contentStyle={{ borderRadius: '12px', border: 'none', backgroundColor: '#171717', color: '#fff', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
-                />
+                <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
           </div>
+          
           <div className="space-y-3 flex-grow overflow-y-auto pr-2 max-h-48">
-            {datosGrafico.map((item) => (
-              <div key={item.name} className="flex justify-between items-center text-sm">
-                <div className="flex items-center">
-                  <span className="w-3 h-3 rounded-full mr-3 shadow-sm border border-black/10" style={{ backgroundColor: item.fill }}></span>
-                  <span className="text-slate-600 dark:text-slate-300 font-medium truncate max-w-[120px]" title={item.name}>{item.name}</span>
+            {datosGrafico.map((item) => {
+              const textColor = obtenerColorTextoParaFondo(item.fill);
+              return (
+                <div key={item.name} className="flex justify-between items-center text-sm">
+                  <span 
+                    className="px-2 py-1 rounded text-[11px] font-bold shadow-sm border border-black/10 truncate max-w-[140px]" 
+                    style={{ backgroundColor: item.fill, color: textColor }}
+                    title={item.name}
+                  >
+                    {item.name}
+                  </span>
+                  <span className="text-slate-900 dark:text-white font-bold">{formatearMoneda(item.value)} €</span>
                 </div>
-                <span className="text-slate-900 dark:text-white font-bold">{item.value.toFixed(2)} €</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       ) : (

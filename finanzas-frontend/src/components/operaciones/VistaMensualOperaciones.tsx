@@ -1,5 +1,5 @@
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { formatearMoneda } from '../../utils/formatters';
+import { formatearMoneda, obtenerColorTextoParaFondo } from '../../utils/formatters';
 import GraficoResumen from './GraficoResumen';
 import TransactionTable from './TransactionTable';
 import DiagramaSankey from './DiagramaSankey';
@@ -42,10 +42,11 @@ export default function VistaMensualOperaciones({ categoriasStats, transacciones
                   {categoriasStats.map(c => {
                     const isIncrease = c.evolucion >= 0;
                     const colorEvolucion = tipo === 'INGRESO' ? (isIncrease ? 'text-emerald-500' : 'text-red-500') : (isIncrease ? 'text-red-500' : 'text-emerald-500');
-
+                    const bgCat = c.color || '#94a3b8';
                     return (
                       <tr key={c.nombre} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                        <td className="py-2.5 px-2"><span className="px-2.5 py-1 rounded-md text-[10px] font-bold text-white shadow-sm" style={{ backgroundColor: c.color }}>{c.nombre}</span></td>
+                        <td className="py-2.5 px-2"><span className="px-2.5 py-1 rounded-md text-[10px] font-bold shadow-sm"
+                            style= {{backgroundColor: c.color, color: obtenerColorTextoParaFondo(bgCat)}}>{c.nombre}</span></td>
                         <td className="py-2.5 text-right font-bold text-neutral-800 dark:text-neutral-200">{formatearMoneda(c.totalMes)} €</td>
                         <td className="py-2.5 text-right font-medium text-neutral-500">{formatearMoneda(c.media)} €</td>
                         <td className={`py-2.5 text-right font-bold flex items-center justify-end gap-1 px-2 ${colorEvolucion}`}>

@@ -79,7 +79,6 @@ export default function Ahorros() {
         </div>
       </div>
 
-      {/* NUEVA CALCULADORA DE PROYECCIONES (Sólo se muestra si hay metas) */}
       {metas.length > 0 && (
         <CalculadoraProyecciones metas={metas} />
       )}

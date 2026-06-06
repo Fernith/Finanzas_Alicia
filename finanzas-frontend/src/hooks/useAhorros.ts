@@ -35,7 +35,7 @@ export function useAhorros() {
 
   return {
     metas, resumen, totalReservadoMetas, dineroDisponibleGastar,
-    objetivoTotal, dineroPorAhorrar, progresoGlobal, // Métricas expuestas
+    objetivoTotal, dineroPorAhorrar, progresoGlobal,
     cargarDatos, eliminarMeta
   };
 }

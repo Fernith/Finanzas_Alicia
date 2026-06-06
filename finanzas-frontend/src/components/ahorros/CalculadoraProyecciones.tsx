@@ -1,15 +1,19 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Calculator, Calendar, CheckSquare, Square } from 'lucide-react';
 
 export default function CalculadoraProyecciones({ metas }: { metas: any[] }) {
+  // FILTRO: Nos quedamos únicamente con las metas que no están completadas ni canceladas
+  const metasActivas = useMemo(() => metas.filter(m => m.ahorrado < m.objetivo), [metas]);
+
   const [selectedMetaIds, setSelectedMetaIds] = useState<Set<string>>(new Set());
   const [aniosSeleccionados, setAniosSeleccionados] = useState<number>(5);
 
   useEffect(() => {
-    if (metas.length > 0 && selectedMetaIds.size === 0) {
-      setSelectedMetaIds(new Set(metas.map(m => m.id)));
+    // Usamos metasActivas en lugar de metas
+    if (metasActivas.length > 0 && selectedMetaIds.size === 0) {
+      setSelectedMetaIds(new Set(metasActivas.map(m => m.id)));
     }
-  }, [metas]);
+  }, [metasActivas]);
 
   const toggleMeta = (id: string) => {
     const next = new Set(selectedMetaIds);
@@ -19,11 +23,12 @@ export default function CalculadoraProyecciones({ metas }: { metas: any[] }) {
   };
 
   const toggleAll = () => {
-    if (selectedMetaIds.size === metas.length) setSelectedMetaIds(new Set());
-    else setSelectedMetaIds(new Set(metas.map(m => m.id)));
+    // Comparamos y alternamos basándonos en metasActivas
+    if (selectedMetaIds.size === metasActivas.length) setSelectedMetaIds(new Set());
+    else setSelectedMetaIds(new Set(metasActivas.map(m => m.id)));
   };
 
-  const metasSeleccionadas = useMemo(() => metas.filter(m => selectedMetaIds.has(m.id)), [metas, selectedMetaIds]);
+  const metasSeleccionadas = useMemo(() => metasActivas.filter(m => selectedMetaIds.has(m.id)), [metasActivas, selectedMetaIds]);
 
   const dineroRestante = useMemo(() => {
     return metasSeleccionadas.reduce((acc, m) => {
@@ -53,19 +58,18 @@ export default function CalculadoraProyecciones({ metas }: { metas: any[] }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Panel Izquierdo: Controles */}
         <div className="space-y-6 lg:col-span-1">
           
-          {/* Selector de Metas */}
           <div>
             <h3 className="text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-3">¿Qué metas quieres proyectar?</h3>
             <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2">
               <button onClick={toggleAll} className="w-full flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-                <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Todas las metas</span>
-                {selectedMetaIds.size === metas.length && metas.length > 0 ? <CheckSquare size={18} className="text-indigo-500" /> : <Square size={18} className="text-neutral-400" />}
+                <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Todas las metas activas</span>
+                {selectedMetaIds.size === metasActivas.length && metasActivas.length > 0 ? <CheckSquare size={18} className="text-indigo-500" /> : <Square size={18} className="text-neutral-400" />}
               </button>
               
-              {metas.map(m => (
+              {/* Iteramos sobre metasActivas, ocultando las completadas */}
+              {metasActivas.map(m => (
                 <button key={m.id} onClick={() => toggleMeta(m.id)} className={`w-full flex items-center justify-between p-2.5 rounded-lg border transition-colors ${selectedMetaIds.has(m.id) ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/10' : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'}`}>
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full shadow-inner" style={{ backgroundColor: m.color || '#ccc' }}></span>
@@ -74,10 +78,12 @@ export default function CalculadoraProyecciones({ metas }: { metas: any[] }) {
                   {selectedMetaIds.has(m.id) ? <CheckSquare size={18} className="text-indigo-500" /> : <Square size={18} className="text-neutral-400" />}
                 </button>
               ))}
+              {metasActivas.length === 0 && (
+                <div className="text-xs text-neutral-500 text-center py-4">No hay metas activas disponibles.</div>
+              )}
             </div>
           </div>
 
-          {/* Selector de Años */}
           <div>
             <h3 className="text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
               <Calendar size={16} /> ¿En cuántos años quieres lograrlo?
@@ -97,10 +103,7 @@ export default function CalculadoraProyecciones({ metas }: { metas: any[] }) {
 
         </div>
 
-        {/* Panel Derecho: Resultados */}
         <div className="lg:col-span-2 space-y-6">
-          
-          {/* Tarjeta Dinámica del Slider */}
           <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
             <div className="absolute -top-4 -right-4 p-4 opacity-10 rotate-12">
               <Calculator size={120} />
@@ -124,7 +127,6 @@ export default function CalculadoraProyecciones({ metas }: { metas: any[] }) {
             </div>
           </div>
 
-          {/* Tabla Resumen */}
           <div className="border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-sm">
             <table className="w-full text-left text-sm">
               <thead className="bg-neutral-50 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 uppercase text-xs font-bold border-b border-neutral-200 dark:border-neutral-700">
